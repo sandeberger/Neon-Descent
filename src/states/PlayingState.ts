@@ -224,6 +224,7 @@ export class PlayingState implements GameState {
 
   fixedUpdate(dt: number): void {
     const input = this.game.input.buildFrame();
+    this.world.player.godMode = this.game.input.konamiActivated;
     this.world.fixedUpdate(dt, input);
     this.game.analytics.update(dt);
 

@@ -151,8 +151,10 @@ export class Player extends Entity {
     this.airDashesUsed = 0; // reset air dashes on bounce
   }
 
+  godMode = false;
+
   takeDamage(amount: number, source: string): void {
-    if (this.isInvulnerable || this.state === 'DEAD') return;
+    if (this.godMode || this.isInvulnerable || this.state === 'DEAD') return;
 
     this.hp -= amount;
     this.invulnTimer = INVULN_DURATION;

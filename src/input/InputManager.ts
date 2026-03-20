@@ -123,6 +123,16 @@ export class InputManager {
   // Prevent keyboard repeat from flooding the buffer
   private consumedThisFrame = new Set<string>();
 
+  // ── Konami code detector ──
+  private static readonly KONAMI = [
+    'ArrowUp','ArrowUp','ArrowDown','ArrowDown',
+    'ArrowLeft','ArrowRight','ArrowLeft','ArrowRight',
+    'KeyB','KeyA',
+  ];
+  private konamiIndex = 0;
+  private _konamiActivated = false;
+  get konamiActivated(): boolean { return this._konamiActivated; }
+
   /** Clear all input state — call on state transitions or focus loss */
   reset(): void {
     this.keys.clear();
@@ -132,6 +142,18 @@ export class InputManager {
 
   private onKeyDown = (e: KeyboardEvent): void => {
     this.keys.add(e.code);
+
+    // Konami code tracking
+    if (e.code === InputManager.KONAMI[this.konamiIndex]) {
+      this.konamiIndex++;
+      if (this.konamiIndex === InputManager.KONAMI.length) {
+        this._konamiActivated = !this._konamiActivated;
+        this.konamiIndex = 0;
+        console.log(`[KONAMI] God mode ${this._konamiActivated ? 'ON' : 'OFF'}`);
+      }
+    } else {
+      this.konamiIndex = e.code === InputManager.KONAMI[0] ? 1 : 0;
+    }
   };
 
   private onKeyUp = (e: KeyboardEvent): void => {
