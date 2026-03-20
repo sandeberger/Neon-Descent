@@ -4,6 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   resolve: {
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.json'],
     alias: {
       '@core':     resolve(__dirname, 'src/core'),
       '@input':    resolve(__dirname, 'src/input'),

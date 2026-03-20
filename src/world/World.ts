@@ -795,6 +795,7 @@ export class World {
       case 'data_guardian':     e = new DataGuardian(); break;
       default:                  e = new Hopper(); break;
     }
+    e.spriteId = id ?? 'hopper';
     e.reset(x, y);
 
     // Apply biome-specific enemy modifiers

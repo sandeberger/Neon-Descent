@@ -32,6 +32,7 @@ export abstract class EnemyBase extends Entity {
 
   bodyColor = '#ff4466';
   glowColor = '#ff2244';
+  spriteId = 'hopper';
   pendingShots: PendingShot[] = [];
 
   abstract onUpdate(dt: number, playerX: number, playerY: number): void;

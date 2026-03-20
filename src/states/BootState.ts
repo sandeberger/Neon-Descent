@@ -1,6 +1,7 @@
 import type { GameState } from '@core/StateMachine';
 import type { Game } from '../Game';
 import { CANVAS_W, CANVAS_H } from '@core/Constants';
+import { sprites } from '@render/SpriteLoader';
 
 export class BootState implements GameState {
   readonly name = 'BOOT';
@@ -10,21 +11,22 @@ export class BootState implements GameState {
   constructor(private game: Game) {}
 
   onEnter(): void {
-    // Simulate asset loading (real loading would go here)
     this.progress = 0;
     this.done = false;
 
-    // In prototype, we have no real assets to load
-    // Simulate a short load for feel
-    const step = () => {
-      this.progress += 0.05;
-      if (this.progress >= 1) {
-        this.done = true;
-      } else {
-        setTimeout(step, 16);
-      }
+    // Load all sprite assets
+    sprites.loadAll().then(() => {
+      this.done = true;
+      this.progress = 1;
+    });
+
+    // Progress animation (visual only — real loading is async)
+    const tick = () => {
+      if (this.done) return;
+      this.progress = Math.min(this.progress + 0.02, 0.9);
+      setTimeout(tick, 16);
     };
-    step();
+    tick();
   }
 
   onExit(): void {}
@@ -59,6 +61,6 @@ export class BootState implements GameState {
 
     ctx.fillStyle = '#667788';
     ctx.font = '10px monospace';
-    ctx.fillText('LOADING...', CANVAS_W / 2, barY + 24);
+    ctx.fillText(this.done ? 'READY' : 'LOADING ASSETS...', CANVAS_W / 2, barY + 24);
   }
 }
