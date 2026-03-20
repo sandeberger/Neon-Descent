@@ -1,0 +1,192 @@
+[
+  {
+    "id": "rapid_fire",
+    "name": "Rapid Fire",
+    "description": "+20% fire rate",
+    "category": "weapon",
+    "rarity": "common",
+    "effects": [{ "type": "fire_rate_bonus", "value": 0.2 }],
+    "maxStacks": 3,
+    "icon": "#ffaa22"
+  },
+  {
+    "id": "heavy_rounds",
+    "name": "Heavy Rounds",
+    "description": "+1 projectile damage",
+    "category": "weapon",
+    "rarity": "uncommon",
+    "effects": [{ "type": "damage_bonus", "value": 1 }],
+    "maxStacks": 2,
+    "icon": "#ff6644"
+  },
+  {
+    "id": "scatter_shot",
+    "name": "Scatter Shot",
+    "description": "+2 projectiles per shot",
+    "category": "weapon",
+    "rarity": "rare",
+    "effects": [{ "type": "projectiles_bonus", "value": 2 }],
+    "maxStacks": 2,
+    "icon": "#ff4466"
+  },
+  {
+    "id": "piercing_rounds",
+    "name": "Piercing Rounds",
+    "description": "Shots pierce through enemies",
+    "category": "weapon",
+    "rarity": "rare",
+    "effects": [{ "type": "piercing", "value": 1 }],
+    "maxStacks": 1,
+    "icon": "#44ffff"
+  },
+  {
+    "id": "recoil_boost",
+    "name": "Jet Recoil",
+    "description": "+50% weapon recoil lift",
+    "category": "weapon",
+    "rarity": "uncommon",
+    "effects": [{ "type": "recoil_bonus", "value": 0.5 }],
+    "maxStacks": 2,
+    "icon": "#88eeff"
+  },
+  {
+    "id": "stomp_force",
+    "name": "Impact Driver",
+    "description": "+1 stomp damage",
+    "category": "stomp",
+    "rarity": "common",
+    "effects": [{ "type": "stomp_damage_bonus", "value": 1 }],
+    "maxStacks": 3,
+    "icon": "#ff8844"
+  },
+  {
+    "id": "stomp_shockwave",
+    "name": "Shockwave Stomp",
+    "description": "Stomp creates a damage ring",
+    "category": "stomp",
+    "rarity": "uncommon",
+    "effects": [{ "type": "stomp_aoe_radius", "value": 60 }],
+    "maxStacks": 2,
+    "icon": "#ffcc44"
+  },
+  {
+    "id": "swift_boots",
+    "name": "Swift Boots",
+    "description": "+15% move speed",
+    "category": "mobility",
+    "rarity": "common",
+    "effects": [{ "type": "move_speed_bonus", "value": 0.15 }],
+    "maxStacks": 3,
+    "icon": "#44ff88"
+  },
+  {
+    "id": "combo_sustain",
+    "name": "Flow State",
+    "description": "+30% combo decay time",
+    "category": "combo",
+    "rarity": "uncommon",
+    "effects": [{ "type": "combo_decay_bonus", "value": 0.3 }],
+    "maxStacks": 3,
+    "icon": "#ddff44"
+  },
+  {
+    "id": "shield_shard",
+    "name": "Shield Shard",
+    "description": "+1 max HP",
+    "category": "defense",
+    "rarity": "uncommon",
+    "effects": [{ "type": "max_hp_bonus", "value": 1 }],
+    "maxStacks": 3,
+    "icon": "#ff4466"
+  },
+  {
+    "id": "lifesteal",
+    "name": "Vampiric Edge",
+    "description": "15% chance to heal on kill",
+    "category": "defense",
+    "rarity": "rare",
+    "effects": [{ "type": "lifesteal_chance", "value": 0.15 }],
+    "maxStacks": 2,
+    "icon": "#ff2244"
+  },
+  {
+    "id": "armor_plating",
+    "name": "Armor Plating",
+    "description": "Reduce all damage by 1",
+    "category": "defense",
+    "rarity": "legendary",
+    "effects": [{ "type": "damage_reduction", "value": 1 }],
+    "maxStacks": 1,
+    "icon": "#aabbcc"
+  },
+  {
+    "id": "magnet_pull",
+    "name": "Magnet Pull",
+    "description": "+50% pickup range",
+    "category": "economy",
+    "rarity": "common",
+    "effects": [{ "type": "magnet_range_bonus", "value": 0.5 }],
+    "maxStacks": 2,
+    "icon": "#aa88ff"
+  },
+  {
+    "id": "lucky_drops",
+    "name": "Lucky Drops",
+    "description": "+30% currency from pickups",
+    "category": "economy",
+    "rarity": "uncommon",
+    "effects": [{ "type": "currency_bonus", "value": 0.3 }],
+    "maxStacks": 2,
+    "icon": "#ffdd44"
+  },
+  {
+    "id": "weapon_beam_cutter",
+    "name": "Beam Cutter",
+    "description": "Switch to piercing beam weapon",
+    "category": "weapon_switch",
+    "rarity": "rare",
+    "effects": [{ "type": "switch_weapon", "value": 0 }],
+    "maxStacks": 1,
+    "icon": "#ff2244"
+  },
+  {
+    "id": "weapon_ricochet",
+    "name": "Ricochet",
+    "description": "Switch to bouncing projectile weapon",
+    "category": "weapon_switch",
+    "rarity": "rare",
+    "effects": [{ "type": "switch_weapon", "value": 0 }],
+    "maxStacks": 1,
+    "icon": "#44ffaa"
+  },
+  {
+    "id": "weapon_chain_shock",
+    "name": "Chain Shock",
+    "description": "Switch to chain lightning weapon",
+    "category": "weapon_switch",
+    "rarity": "rare",
+    "effects": [{ "type": "switch_weapon", "value": 0 }],
+    "maxStacks": 1,
+    "icon": "#44ddff"
+  },
+  {
+    "id": "weapon_acid_scatter",
+    "name": "Acid Scatter",
+    "description": "Switch to area-denial acid weapon",
+    "category": "weapon_switch",
+    "rarity": "rare",
+    "effects": [{ "type": "switch_weapon", "value": 0 }],
+    "maxStacks": 1,
+    "icon": "#88ff22"
+  },
+  {
+    "id": "weapon_drone_support",
+    "name": "Drone Support",
+    "description": "Switch to auto-turret drone weapon",
+    "category": "weapon_switch",
+    "rarity": "legendary",
+    "effects": [{ "type": "switch_weapon", "value": 0 }],
+    "maxStacks": 1,
+    "icon": "#ffcc44"
+  }
+]

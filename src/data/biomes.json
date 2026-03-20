@@ -1,0 +1,82 @@
+[
+  {
+    "id": "surface_fracture",
+    "minDepth": 0,
+    "maxDepth": 1999,
+    "palette": {
+      "background": "#0a0a1a",
+      "backgroundLine1": "#111122",
+      "backgroundLine2": "#0d0d22",
+      "tile": "#1a2a3a",
+      "tileAccent": "#2a3a4a",
+      "platform": "#334455",
+      "hazard": "#ff2244",
+      "bounce": "#44ff88",
+      "breakable": "#887744"
+    }
+  },
+  {
+    "id": "neon_gut",
+    "minDepth": 2000,
+    "maxDepth": 3999,
+    "palette": {
+      "background": "#10061a",
+      "backgroundLine1": "#1a0a22",
+      "backgroundLine2": "#150820",
+      "tile": "#2a1a32",
+      "tileAccent": "#3a2242",
+      "platform": "#553366",
+      "hazard": "#ff44aa",
+      "bounce": "#ff88ff",
+      "breakable": "#886688"
+    }
+  },
+  {
+    "id": "data_crypt",
+    "minDepth": 4000,
+    "maxDepth": 5999,
+    "palette": {
+      "background": "#060e14",
+      "backgroundLine1": "#0a1a12",
+      "backgroundLine2": "#081610",
+      "tile": "#122a1a",
+      "tileAccent": "#1a3a2a",
+      "platform": "#225533",
+      "hazard": "#cc44ff",
+      "bounce": "#44ffaa",
+      "breakable": "#668844"
+    }
+  },
+  {
+    "id": "molten_grid",
+    "minDepth": 6000,
+    "maxDepth": 8999,
+    "palette": {
+      "background": "#140e04",
+      "backgroundLine1": "#1c1408",
+      "backgroundLine2": "#181006",
+      "tile": "#2a2010",
+      "tileAccent": "#3a2c18",
+      "platform": "#554422",
+      "hazard": "#ff6622",
+      "bounce": "#ffcc44",
+      "breakable": "#998844"
+    }
+  },
+  {
+    "id": "void_core",
+    "minDepth": 9000,
+    "maxDepth": 999999,
+    "palette": {
+      "background": "#140808",
+      "backgroundLine1": "#1a0a0a",
+      "backgroundLine2": "#160c06",
+      "tile": "#2a1412",
+      "tileAccent": "#3a1a18",
+      "platform": "#553322",
+      "hazard": "#ff4422",
+      "bounce": "#ffaa44",
+      "breakable": "#886644"
+    }
+  }
+]

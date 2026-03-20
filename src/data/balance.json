@@ -1,0 +1,58 @@
+{
+  "physics": {
+    "gravity": 1800,
+    "terminalVelocity": 600,
+    "moveAccel": 2400,
+    "moveDecel": 1800,
+    "maxMoveSpeed": 280,
+    "airSteer": 0.85
+  },
+  "stomp": {
+    "speed": 900,
+    "bounce": -400,
+    "startupMs": 50
+  },
+  "dash": {
+    "speed": 500,
+    "durationMs": 120,
+    "cooldownMs": 600,
+    "invulnMs": 80,
+    "maxAirDashes": 2
+  },
+  "weapon": {
+    "heatPerShot": 0.08,
+    "overheatPenalty": 1.2,
+    "coolRate": 0.35
+  },
+  "wallSlide": {
+    "speed": 80,
+    "jumpVx": 200,
+    "jumpVy": -350
+  },
+  "combo": {
+    "decayTime": 2.0,
+    "tierThresholds": [0, 5, 15, 30, 60],
+    "tierMultipliers": [1, 1.5, 2, 3, 5]
+  },
+  "scroll": {
+    "baseSpeed": 80,
+    "maxSpeed": 200
+  },
+  "player": {
+    "baseHp": 3,
+    "invulnDuration": 1.0,
+    "width": 20,
+    "height": 28
+  },
+  "pickup": {
+    "magnetRange": 50
+  },
+  "coyoteTimeMs": 100,
+  "special": {
+    "killsPerCharge": 8,
+    "comboTierBonus": 0.5,
+    "empDamage": 3,
+    "cooldown": 0.5,
+    "maxCharges": 1
+  }
+}

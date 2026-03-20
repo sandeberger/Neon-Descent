@@ -1,0 +1,47 @@
+[
+  {
+    "id": "max_hp",
+    "name": "VITALITY",
+    "description": "+1 Max HP",
+    "maxLevel": 3,
+    "costs": [10, 25, 50],
+    "effect": "max_hp",
+    "values": [1, 1, 1]
+  },
+  {
+    "id": "fire_rate",
+    "name": "OVERCLOCK",
+    "description": "+15% Fire Rate",
+    "maxLevel": 2,
+    "costs": [15, 35],
+    "effect": "fire_rate",
+    "values": [0.15, 0.15]
+  },
+  {
+    "id": "magnet_range",
+    "name": "MAGNETISM",
+    "description": "+25% Pickup Range",
+    "maxLevel": 2,
+    "costs": [10, 20],
+    "effect": "magnet_range",
+    "values": [0.25, 0.25]
+  },
+  {
+    "id": "stomp_damage",
+    "name": "IMPACT",
+    "description": "+1 Stomp Damage",
+    "maxLevel": 2,
+    "costs": [20, 45],
+    "effect": "stomp_damage",
+    "values": [1, 1]
+  },
+  {
+    "id": "shard_bonus",
+    "name": "SCAVENGER",
+    "description": "+20% Shard Earn",
+    "maxLevel": 3,
+    "costs": [8, 18, 35],
+    "effect": "shard_bonus",
+    "values": [0.2, 0.2, 0.2]
+  }
+]

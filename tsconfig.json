@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "baseUrl": ".",
+    "paths": {
+      "@core/*":     ["src/core/*"],
+      "@input/*":    ["src/input/*"],
+      "@world/*":    ["src/world/*"],
+      "@entities/*": ["src/entities/*"],
+      "@systems/*":  ["src/systems/*"],
+      "@render/*":   ["src/rendering/*"],
+      "@audio/*":    ["src/audio/*"],
+      "@ui/*":       ["src/ui/*"],
+      "@data/*":     ["src/data/*"],
+      "@utils/*":    ["src/utils/*"],
+      "@vfx/*":      ["src/vfx/*"],
+      "@states/*":   ["src/states/*"],
+      "@save/*":     ["src/save/*"],
+      "@meta/*":     ["src/meta/*"],
+      "@analytics/*": ["src/analytics/*"]
+    }
+  },
+  "include": ["src"]
+}

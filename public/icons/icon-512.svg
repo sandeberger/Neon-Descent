@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0a0a1a"/>
+  <rect x="40" y="40" width="432" height="432" rx="40" fill="#111128"/>
+  <text x="256" y="220" font-family="monospace" font-size="72" font-weight="bold" fill="#44ddff" text-anchor="middle">NEON</text>
+  <text x="256" y="310" font-family="monospace" font-size="56" font-weight="bold" fill="#ff4466" text-anchor="middle">DESCENT</text>
+  <line x1="100" y1="360" x2="412" y2="360" stroke="#44ddff" stroke-width="3" opacity="0.5"/>
+</svg>

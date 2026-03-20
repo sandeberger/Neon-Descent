@@ -1,0 +1,211 @@
+[
+  {
+    "id": "hopper",
+    "hp": 2,
+    "damage": 1,
+    "scoreValue": 100,
+    "comboValue": 1,
+    "bodyColor": "#ff4466",
+    "glowColor": "#ff2244",
+    "hitboxWidth": 24,
+    "hitboxHeight": 24
+  },
+  {
+    "id": "turret_bloom",
+    "hp": 3,
+    "damage": 1,
+    "scoreValue": 200,
+    "comboValue": 2,
+    "bodyColor": "#cc44ff",
+    "glowColor": "#aa22dd",
+    "hitboxWidth": 28,
+    "hitboxHeight": 28
+  },
+  {
+    "id": "splitter",
+    "hp": 1,
+    "damage": 1,
+    "scoreValue": 150,
+    "comboValue": 1,
+    "bodyColor": "#44ff88",
+    "glowColor": "#22dd66",
+    "hitboxWidth": 26,
+    "hitboxHeight": 26
+  },
+  {
+    "id": "splitter_fragment",
+    "hp": 1,
+    "damage": 1,
+    "scoreValue": 50,
+    "comboValue": 1,
+    "bodyColor": "#33cc66",
+    "glowColor": "#22aa44",
+    "hitboxWidth": 14,
+    "hitboxHeight": 14
+  },
+  {
+    "id": "shield_bug",
+    "hp": 2,
+    "damage": 1,
+    "scoreValue": 200,
+    "comboValue": 2,
+    "bodyColor": "#ffaa22",
+    "glowColor": "#dd8800",
+    "hitboxWidth": 24,
+    "hitboxHeight": 20
+  },
+  {
+    "id": "leech",
+    "hp": 2,
+    "damage": 1,
+    "scoreValue": 150,
+    "comboValue": 2,
+    "bodyColor": "#88ff44",
+    "glowColor": "#44cc22",
+    "hitboxWidth": 18,
+    "hitboxHeight": 18
+  },
+  {
+    "id": "parasite_cloud",
+    "hp": 1,
+    "damage": 1,
+    "scoreValue": 50,
+    "comboValue": 1,
+    "bodyColor": "#cc44ff",
+    "glowColor": "#aa22dd",
+    "hitboxWidth": 14,
+    "hitboxHeight": 14
+  },
+  {
+    "id": "rail_sentinel",
+    "hp": 4,
+    "damage": 1,
+    "scoreValue": 300,
+    "comboValue": 3,
+    "bodyColor": "#ff8844",
+    "glowColor": "#dd6622",
+    "hitboxWidth": 26,
+    "hitboxHeight": 26
+  },
+  {
+    "id": "core_carrier",
+    "hp": 8,
+    "damage": 2,
+    "scoreValue": 500,
+    "comboValue": 4,
+    "bodyColor": "#ff4488",
+    "glowColor": "#dd2266",
+    "hitboxWidth": 36,
+    "hitboxHeight": 36
+  },
+  {
+    "id": "sentinel_miniboss",
+    "hp": 15,
+    "damage": 1,
+    "scoreValue": 1000,
+    "comboValue": 5,
+    "bodyColor": "#ff2266",
+    "glowColor": "#cc0044",
+    "hitboxWidth": 40,
+    "hitboxHeight": 40
+  },
+  {
+    "id": "bloom_heart",
+    "hp": 30,
+    "damage": 2,
+    "scoreValue": 3000,
+    "comboValue": 10,
+    "bodyColor": "#ff44cc",
+    "glowColor": "#cc22aa",
+    "hitboxWidth": 56,
+    "hitboxHeight": 56
+  },
+  {
+    "id": "ambusher",
+    "hp": 3,
+    "damage": 2,
+    "scoreValue": 250,
+    "comboValue": 2,
+    "bodyColor": "#884466",
+    "glowColor": "#662244",
+    "hitboxWidth": 22,
+    "hitboxHeight": 22
+  },
+  {
+    "id": "bomber",
+    "hp": 2,
+    "damage": 3,
+    "scoreValue": 200,
+    "comboValue": 2,
+    "bodyColor": "#ff6622",
+    "glowColor": "#cc4400",
+    "hitboxWidth": 20,
+    "hitboxHeight": 20
+  },
+  {
+    "id": "mirror",
+    "hp": 4,
+    "damage": 1,
+    "scoreValue": 350,
+    "comboValue": 3,
+    "bodyColor": "#aaccff",
+    "glowColor": "#6688cc",
+    "hitboxWidth": 24,
+    "hitboxHeight": 24
+  },
+  {
+    "id": "swarm_mother",
+    "hp": 6,
+    "damage": 1,
+    "scoreValue": 400,
+    "comboValue": 3,
+    "bodyColor": "#44cc88",
+    "glowColor": "#228866",
+    "hitboxWidth": 32,
+    "hitboxHeight": 32
+  },
+  {
+    "id": "swarm_drone",
+    "hp": 1,
+    "damage": 1,
+    "scoreValue": 25,
+    "comboValue": 1,
+    "bodyColor": "#33aa66",
+    "glowColor": "#228844",
+    "hitboxWidth": 12,
+    "hitboxHeight": 12
+  },
+  {
+    "id": "drill_mother",
+    "hp": 40,
+    "damage": 2,
+    "scoreValue": 5000,
+    "comboValue": 15,
+    "bodyColor": "#ff8844",
+    "glowColor": "#dd6622",
+    "hitboxWidth": 60,
+    "hitboxHeight": 60
+  },
+  {
+    "id": "acid_wyrm",
+    "hp": 20,
+    "damage": 2,
+    "scoreValue": 1500,
+    "comboValue": 8,
+    "bodyColor": "#88ff44",
+    "glowColor": "#44cc22",
+    "hitboxWidth": 44,
+    "hitboxHeight": 44
+  },
+  {
+    "id": "data_guardian",
+    "hp": 18,
+    "damage": 1,
+    "scoreValue": 1500,
+    "comboValue": 8,
+    "bodyColor": "#44ffcc",
+    "glowColor": "#22ddaa",
+    "hitboxWidth": 44,
+    "hitboxHeight": 44
+  }
+]
