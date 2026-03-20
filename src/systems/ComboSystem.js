@@ -43,12 +43,16 @@ export class ComboSystem {
         }
     }
     updateTier() {
+        const prevTier = this.tier;
         for (let i = COMBO_TIER_THRESHOLDS.length - 1; i >= 0; i--) {
             if (this.count >= COMBO_TIER_THRESHOLDS[i]) {
                 this.tier = i;
                 this.multiplier = COMBO_TIER_MULTIPLIERS[i];
                 break;
             }
+        }
+        if (this.tier > prevTier) {
+            this.events.emit('combo:threshold', { tier: this.tier });
         }
     }
     reset() {

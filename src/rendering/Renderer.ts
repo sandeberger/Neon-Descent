@@ -328,49 +328,177 @@ export class Renderer {
     cam: Camera,
     palette: BiomePalette,
   ): void {
-    // Additional depth-based atmospheric effects
     const depth = cam.y;
+    const time = Date.now() / 1000;
 
-    // Deeper = more visual noise
-    if (depth > 4000) {
-      // Data streams (data_crypt style)
-      ctx.fillStyle = palette.backgroundLine2;
-      ctx.globalAlpha = 0.06;
-      const streamOffset = cam.y * 0.25;
-      for (let i = 0; i < 6; i++) {
-        const sx = (i * 67 + streamOffset * 0.1) % CANVAS_W;
-        const h = 20 + (i * 17 % 30);
-        const sy = (streamOffset + i * 43) % CANVAS_H;
-        ctx.fillRect(sx, sy, 2, h);
+    // Surface Fracture: falling debris particles + flickering distant lights
+    if (depth < 2000) {
+      // Falling debris
+      ctx.fillStyle = palette.backgroundLine1;
+      ctx.globalAlpha = 0.12;
+      for (let i = 0; i < 8; i++) {
+        const seed = i * 97.3;
+        const px = (seed * 3.7) % CANVAS_W;
+        const py = (seed * 11.3 + time * 30 + cam.y * 0.03) % CANVAS_H;
+        ctx.fillRect(px, py, 1 + (i % 3), 2 + (i % 4));
+      }
+      // Distant flickering lights
+      ctx.globalAlpha = 0.06 + Math.sin(time * 2 + 1.3) * 0.03;
+      ctx.fillStyle = '#44ddff';
+      for (let i = 0; i < 4; i++) {
+        const lx = (i * 89 + 20) % CANVAS_W;
+        const ly = (i * 137 + cam.y * 0.01) % CANVAS_H;
+        const flicker = Math.sin(time * (3 + i) + i * 2.7) > 0.3 ? 1 : 0;
+        if (flicker) ctx.fillRect(lx, ly, 2, 2);
       }
     }
 
-    if (depth > 6000) {
-      // Heat distortion waves (molten_grid style)
+    // Neon Gut: pulsing organic veins + dripping particles
+    if (depth >= 2000 && depth < 4000) {
+      // Pulsing veins
+      ctx.strokeStyle = palette.backgroundLine2;
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.08 + Math.sin(time * 1.5) * 0.03;
+      const veinOffset = cam.y * 0.06;
+      for (let i = 0; i < 3; i++) {
+        const baseX = (i * 120 + 30) % CANVAS_W;
+        ctx.beginPath();
+        for (let y = 0; y < CANVAS_H; y += 20) {
+          const x = baseX + Math.sin((y + veinOffset) * 0.03 + i) * 15;
+          if (y === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      // Dripping particles
+      ctx.fillStyle = '#ff44aa';
+      ctx.globalAlpha = 0.1;
+      for (let i = 0; i < 6; i++) {
+        const dx = (i * 57 + 10) % CANVAS_W;
+        const dy = (time * 40 + i * 107 + cam.y * 0.08) % CANVAS_H;
+        ctx.fillRect(dx, dy, 1, 3 + (i % 3));
+      }
+    }
+
+    // Data Crypt: scrolling data streams + glitch bars
+    if (depth >= 4000 && depth < 6000) {
+      // Vertical data streams
+      ctx.fillStyle = palette.backgroundLine2;
+      ctx.globalAlpha = 0.08;
+      const streamOffset = cam.y * 0.25;
+      for (let i = 0; i < 8; i++) {
+        const sx = (i * 47 + streamOffset * 0.1) % CANVAS_W;
+        const h = 10 + (i * 17 % 40);
+        const sy = (streamOffset * (1 + i * 0.2) + i * 43) % CANVAS_H;
+        ctx.fillRect(sx, sy, 2, h);
+      }
+      // Horizontal glitch bars
+      ctx.fillStyle = '#44ffaa';
+      ctx.globalAlpha = 0.03;
+      const glitchSeed = Math.floor(time * 4);
+      for (let i = 0; i < 3; i++) {
+        const gy = ((glitchSeed * 73 + i * 211) % CANVAS_H);
+        const gw = 20 + ((glitchSeed * 37 + i * 97) % 60);
+        const gx = ((glitchSeed * 53 + i * 139) % CANVAS_W);
+        ctx.fillRect(gx, gy, gw, 2);
+      }
+    }
+
+    // Hollow Market: warm floating lanterns + gentle ambient glow
+    if (depth >= 6000 && depth < 7500) {
+      // Floating lantern-like lights
+      ctx.globalAlpha = 0.12;
+      for (let i = 0; i < 6; i++) {
+        const seed = i * 127.7;
+        const lx = (seed * 2.3 + Math.sin(time * 0.5 + i * 1.8) * 20) % CANVAS_W;
+        const ly = (seed * 5.1 + cam.y * 0.04 + Math.sin(time * 0.7 + i) * 10) % CANVAS_H;
+        const glow = 0.08 + Math.sin(time * 1.2 + i * 2.1) * 0.04;
+        ctx.fillStyle = '#ffcc88';
+        ctx.globalAlpha = glow;
+        ctx.fillRect(lx - 3, ly - 3, 6, 6);
+        ctx.globalAlpha = glow * 0.4;
+        ctx.fillRect(lx - 6, ly - 6, 12, 12);
+      }
+      // Warm ambient glow band
+      ctx.globalAlpha = 0.04 + Math.sin(time * 0.3) * 0.01;
+      const grad = ctx.createLinearGradient(0, CANVAS_H * 0.3, 0, CANVAS_H * 0.7);
+      grad.addColorStop(0, 'transparent');
+      grad.addColorStop(0.5, '#332244');
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    }
+
+    // Molten Grid: heat distortion waves + ember particles + lava glow
+    if (depth >= 7500 && depth < 9500) {
+      // Heat distortion waves
       ctx.strokeStyle = palette.backgroundLine1;
       ctx.lineWidth = 1;
-      ctx.globalAlpha = 0.05;
+      ctx.globalAlpha = 0.06;
       const heatOffset = cam.y * 0.12;
-      for (let y = 0; y < CANVAS_H; y += 50) {
+      for (let y = 0; y < CANVAS_H; y += 40) {
         ctx.beginPath();
-        for (let x = 0; x < CANVAS_W; x += 10) {
-          const oy = y + Math.sin((x + heatOffset) * 0.05) * 3;
+        for (let x = 0; x < CANVAS_W; x += 8) {
+          const oy = y + Math.sin((x + heatOffset + time * 30) * 0.04) * 4;
           if (x === 0) ctx.moveTo(x, oy);
           else ctx.lineTo(x, oy);
         }
         ctx.stroke();
       }
+      // Rising ember particles
+      ctx.fillStyle = '#ff6622';
+      ctx.globalAlpha = 0.15;
+      for (let i = 0; i < 10; i++) {
+        const ex = (i * 37 + 15) % CANVAS_W;
+        const ey = CANVAS_H - ((time * 50 + i * 67 + cam.y * 0.05) % CANVAS_H);
+        const sz = 1 + (i % 2);
+        ctx.globalAlpha = 0.1 + (ey / CANVAS_H) * 0.1;
+        ctx.fillRect(ex, ey, sz, sz);
+      }
+      // Bottom lava glow
+      ctx.globalAlpha = 0.06 + Math.sin(time * 0.8) * 0.02;
+      const lavaGrad = ctx.createLinearGradient(0, CANVAS_H * 0.8, 0, CANVAS_H);
+      lavaGrad.addColorStop(0, 'transparent');
+      lavaGrad.addColorStop(1, '#ff440022');
+      ctx.fillStyle = lavaGrad;
+      ctx.fillRect(0, CANVAS_H * 0.8, CANVAS_W, CANVAS_H * 0.2);
     }
 
-    if (depth > 9000) {
-      // Void static (void_core style)
+    // Void Core: static interference + blood-red flickers + reality tears
+    if (depth >= 9500) {
+      // Static interference
       ctx.fillStyle = '#ff0011';
-      ctx.globalAlpha = 0.02;
-      for (let i = 0; i < 8; i++) {
+      ctx.globalAlpha = 0.03;
+      for (let i = 0; i < 12; i++) {
         const sx = Math.random() * CANVAS_W;
         const sy = Math.random() * CANVAS_H;
-        ctx.fillRect(sx, sy, 1 + Math.random() * 3, 1);
+        ctx.fillRect(sx, sy, 1 + Math.random() * 4, 1);
       }
+      // Reality tear lines
+      ctx.strokeStyle = '#ff2244';
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.05 + Math.sin(time * 3) * 0.02;
+      const tearSeed = Math.floor(time * 2);
+      for (let i = 0; i < 2; i++) {
+        const tx = ((tearSeed * 73 + i * 157) % CANVAS_W);
+        const ty = ((tearSeed * 47 + i * 113) % (CANVAS_H * 0.8));
+        const tLen = 10 + ((tearSeed * 31 + i * 89) % 30);
+        ctx.beginPath();
+        ctx.moveTo(tx, ty);
+        ctx.lineTo(tx + ((tearSeed * 11 + i * 7) % 20) - 10, ty + tLen);
+        ctx.stroke();
+      }
+      // Pulsing crimson vignette
+      const voidPulse = 0.04 + Math.sin(time * 2) * 0.02;
+      const voidGrad = ctx.createRadialGradient(
+        CANVAS_W / 2, CANVAS_H / 2, CANVAS_H * 0.2,
+        CANVAS_W / 2, CANVAS_H / 2, CANVAS_H * 0.6,
+      );
+      voidGrad.addColorStop(0, 'transparent');
+      voidGrad.addColorStop(1, `rgba(120, 0, 0, ${voidPulse})`);
+      ctx.fillStyle = voidGrad;
+      ctx.globalAlpha = 1;
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
     }
 
     ctx.globalAlpha = 1;

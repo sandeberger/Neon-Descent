@@ -21,6 +21,18 @@ export class AntiBullshitSystem {
         prefs.set('traversal', 3);
         prefs.set('hazard', 2);
         prefs.set('loot', 1);
+        // Hollow Market: safe zone — heavily bias toward recovery, loot, shop, events
+        if (biomeId === 'hollow_market') {
+            prefs.set('combat', 1);
+            prefs.set('hazard', 0.5);
+            prefs.set('traversal', 2);
+            prefs.set('recovery', 5);
+            prefs.set('loot', 5);
+            prefs.set('shop', 4);
+            prefs.set('event', 4);
+            prefs.set('elite', 0);
+            prefs.set('miniboss', 0);
+        }
         // Intro only in first 3 chunks, then never
         prefs.set('intro', this.chunksGenerated < 3 ? 5 : 0);
         // Recovery pressure boost when overdue

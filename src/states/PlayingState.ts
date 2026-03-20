@@ -6,6 +6,7 @@ import { HUD, type HUDState } from '@ui/HUD';
 import { CANVAS_W, CANVAS_H, PLAYER_BASE_HP, MAX_AIR_DASHES } from '@core/Constants';
 import { SeededRNG } from '@utils/SeededRNG';
 import { HapticSystem } from '@systems/HapticSystem';
+import { TutorialSystem } from '@systems/TutorialSystem';
 import { RUN_UPGRADES } from '@systems/UpgradeSystem';
 import type { PausedState } from './PausedState';
 import type { RunShopState } from './RunShopState';
@@ -16,6 +17,7 @@ export class PlayingState implements GameState {
   private renderer!: Renderer;
   private hud!: HUD;
   private haptic = new HapticSystem();
+  private tutorial: TutorialSystem | null = null;
   private pauseKeyListener: ((e: KeyboardEvent) => void) | null = null;
   private pauseTouchListener: ((e: Event) => void) | null = null;
   private resuming = false;
@@ -85,11 +87,40 @@ export class PlayingState implements GameState {
       this.game.pendingLoadoutPerk = null;
     }
 
+    // Apply accessibility settings to VFX
+    this.world.vfx.shake.intensityMultiplier = this.game.accessibility.shakeMultiplier;
+    this.world.vfx.flashMultiplier = this.game.accessibility.flashMultiplier;
+
+    // Tutorial system (show for first 3 runs)
+    const isFirstRun = this.game.meta.totalRuns < 3;
+    this.tutorial = new TutorialSystem(this.world.events, isFirstRun);
+
+    // Wire codex discovery for biome lore
+    this.world.events.on('biome:enter', (d) => {
+      const biomeLoreMap: Record<string, string> = {
+        surface_fracture: 'lore_surface',
+        neon_gut: 'lore_gut',
+        data_crypt: 'lore_crypt',
+        hollow_market: 'lore_market',
+        molten_grid: 'lore_molten',
+        void_core: 'lore_void',
+      };
+      const loreId = biomeLoreMap[d.id];
+      if (loreId) this.game.codex.discover(loreId);
+    });
+
+    // Wire codex discovery for boss lore
+    this.world.events.on('boss:defeated', () => {
+      // Discover lore on first boss kill
+      this.game.codex.discover('lore_bloom_heart');
+      this.game.codex.discover('lore_drill_mother');
+    });
+
     // Start ambient music
     this.game.audio.startMusic();
 
     // Wire death event
-    this.world.events.on('player:dead', () => {
+    this.world.events.on('player:dead', (d) => {
       const score = this.world.scoring.score;
       const depth = this.world.scoring.depth;
       this.game.lastRunScore = score;
@@ -100,6 +131,10 @@ export class PlayingState implements GameState {
       this.game.lastRunWasBestScore = score > this.game.meta.bestScore;
       this.game.lastRunWasBestDepth = depth > this.game.meta.bestDepth;
       this.game.lastRunWasDaily = this.world.isDaily;
+      this.game.lastRunDeathCause = d.killer;
+      this.game.lastRunKills = this.world.scoring.kills;
+      this.game.lastRunEliteKills = this.world.scoring.eliteKills;
+      this.game.lastRunNoDamageChunks = this.world.scoring.noDamageChunks;
 
       // Add to leaderboard
       if (this.game.leaderboard) {
@@ -189,6 +224,12 @@ export class PlayingState implements GameState {
     this.world.fixedUpdate(dt, input);
     this.game.analytics.update(dt);
 
+    // Tutorial
+    if (this.tutorial) {
+      this.tutorial.notifyMove(input.moveX);
+      this.tutorial.update(dt);
+    }
+
     // Adaptive music
     const nearDeath = this.world.player.hp <= 1 && this.world.player.hp > 0;
     this.game.audio.updateAdaptiveMusic(this.world.combo.tier, nearDeath, this.world.pacing.getBiomeId());
@@ -244,6 +285,11 @@ export class PlayingState implements GameState {
       specialReady: special.charges > 0,
     };
     this.hud.render(hudState);
+
+    // Tutorial overlay
+    if (this.tutorial) {
+      this.tutorial.render(this.game.ctx);
+    }
 
     // Pause button (top-right)
     const ctx = this.game.ctx;

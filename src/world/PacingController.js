@@ -1,5 +1,14 @@
 import biomesData from '@data/biomes.json';
 const BIOMES = biomesData;
+// Biome-specific enemy speed/HP modifiers
+const BIOME_ENEMY_MODS = {
+    surface_fracture: { speedMult: 1.0, hpMult: 1.0 },
+    neon_gut: { speedMult: 1.15, hpMult: 1.1 },
+    data_crypt: { speedMult: 1.0, hpMult: 1.3 },
+    hollow_market: { speedMult: 0.7, hpMult: 0.8 }, // Safe zone — fewer/weaker enemies
+    molten_grid: { speedMult: 1.3, hpMult: 1.2 },
+    void_core: { speedMult: 1.5, hpMult: 1.5 },
+};
 export class PacingController {
     constructor(events) {
         this.events = events;
@@ -22,6 +31,18 @@ export class PacingController {
                 return BIOMES[i].id;
         }
         return BIOMES[0].id;
+    }
+    /** Get enemy speed multiplier for current biome */
+    getEnemySpeedMult() {
+        return BIOME_ENEMY_MODS[this.getBiomeId()]?.speedMult ?? 1.0;
+    }
+    /** Get enemy HP multiplier for current biome */
+    getEnemyHpMult() {
+        return BIOME_ENEMY_MODS[this.getBiomeId()]?.hpMult ?? 1.0;
+    }
+    /** Whether the current biome is a safe zone (fewer enemies, more shops/recovery) */
+    isSafeZone() {
+        return this.getBiomeId() === 'hollow_market';
     }
     reset() {
         this.depth = 0;

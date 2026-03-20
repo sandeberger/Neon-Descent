@@ -48,9 +48,25 @@
     }
   },
   {
-    "id": "molten_grid",
+    "id": "hollow_market",
     "minDepth": 6000,
-    "maxDepth": 8999,
+    "maxDepth": 7499,
+    "palette": {
+      "background": "#0c0a14",
+      "backgroundLine1": "#181428",
+      "backgroundLine2": "#141020",
+      "tile": "#1e1830",
+      "tileAccent": "#2a2240",
+      "platform": "#443366",
+      "hazard": "#ff8844",
+      "bounce": "#ffcc88",
+      "breakable": "#776655"
+    }
+  },
+  {
+    "id": "molten_grid",
+    "minDepth": 7500,
+    "maxDepth": 9499,
     "palette": {
       "background": "#140e04",
       "backgroundLine1": "#1c1408",
@@ -65,7 +81,7 @@
   },
   {
     "id": "void_core",
-    "minDepth": 9000,
+    "minDepth": 9500,
     "maxDepth": 999999,
     "palette": {
       "background": "#140808",

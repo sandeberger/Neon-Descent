@@ -12,6 +12,14 @@ import { SentinelMiniboss } from '@entities/enemies/SentinelMiniboss';
 import { RailSentinel } from '@entities/enemies/RailSentinel';
 import { CoreCarrier } from '@entities/enemies/CoreCarrier';
 import { BloomHeart } from '@entities/enemies/BloomHeart';
+import { Ambusher } from '@entities/enemies/Ambusher';
+import { Bomber } from '@entities/enemies/Bomber';
+import { Mirror } from '@entities/enemies/Mirror';
+import { SwarmMother } from '@entities/enemies/SwarmMother';
+import { SwarmDrone } from '@entities/enemies/SwarmDrone';
+import { DrillMother } from '@entities/enemies/DrillMother';
+import { AcidWyrm } from '@entities/enemies/AcidWyrm';
+import { DataGuardian } from '@entities/enemies/DataGuardian';
 import { EventBus } from '@core/EventBus';
 import { ObjectPool } from '@core/ObjectPool';
 import { PhysicsSystem } from '@systems/PhysicsSystem';
@@ -45,6 +53,17 @@ export class World {
         this.shopPending = false;
         this.chunksGenerated = 0;
         this.isDaily = false;
+        // Near-miss tracking (cooldown per projectile to prevent spam)
+        this.nearMissCooldown = 0;
+        this.NEAR_MISS_RADIUS = 15;
+        this.NEAR_MISS_COOLDOWN = 0.15;
+        // Chunk crossing tracking
+        this.lastChunkIndex = -1;
+        // Threat density for camera
+        this.threatDensity = 0;
+        // Biome hazard state
+        this.laserSweepTimer = 0;
+        this.darknessRadius = 0;
         this.seed = seed ?? (Date.now() | 0);
         this.rng = new SeededRNG(this.seed);
         this.events = new EventBus();
@@ -171,6 +190,12 @@ export class World {
         }
         // Entity collisions
         this.resolveEntityCollisions();
+        // Near-miss detection
+        this.detectNearMisses(dt);
+        // Bomber explosion processing
+        this.processBomberExplosions();
+        // SwarmMother spawns
+        this.processSwarmMotherSpawns();
         // Projectile vs breakable tiles
         this.resolveProjectileTiles();
         // Pickup magnet
@@ -182,12 +207,23 @@ export class World {
         this.combo.update(dt);
         // VFX
         this.vfx.update(dt);
+        // Threat density calculation for camera
+        this.calculateThreatDensity();
+        // Biome hazard updates
+        this.updateBiomeHazards(dt);
         // Camera
         this.camera.shakeOffsetX = this.vfx.shake.offsetX;
         this.camera.shakeOffsetY = this.vfx.shake.offsetY;
+        this.camera.threatDensity = this.threatDensity;
         this.camera.update(this.player.y, dt, this.combo.tier / 4);
         // Depth tracking (delegated to ScoreSystem)
         this.scoring.addDepth(this.player.y);
+        // Emit chunk:entered when player crosses chunk boundaries
+        const currentChunkIdx = Math.floor(this.player.y / CHUNK_HEIGHT);
+        if (currentChunkIdx !== this.lastChunkIndex) {
+            this.lastChunkIndex = currentChunkIdx;
+            this.events.emit('chunk:entered', { chunkIndex: currentChunkIdx });
+        }
         // Spawn enemies from new chunks
         this.spawnFromChunks();
         // Generate more chunks if needed
@@ -303,6 +339,20 @@ export class World {
                             this.vfx.emit('stomp_impact', p.x, tileRect.y);
                         }
                     }
+                    if (tile === TileType.ACID_POOL) {
+                        if (aabbOverlap(bounds, tileRect)) {
+                            this.damage.dealDamageToPlayer(1, 'acid');
+                            this.vfx.emit('pickup_collect', tileRect.x + TILE_SIZE / 2, tileRect.y);
+                        }
+                    }
+                    if (tile === TileType.LASER) {
+                        // Sweep laser active every 3s for 1s
+                        const laserPhase = this.laserSweepTimer % 4;
+                        if (laserPhase < 1 && aabbOverlap(bounds, tileRect)) {
+                            this.damage.dealDamageToPlayer(1, 'laser');
+                            this.vfx.flash('#cc44ff', 0.2, 0.15);
+                        }
+                    }
                 }
             }
         }
@@ -373,12 +423,28 @@ export class World {
                         this.vfx.emit('enemy_death', enemy.x, enemy.y);
                         this.vfx.hitStop.trigger(3);
                         this.spawnPickupAt(enemy.x, enemy.y);
+                        // Chain Shock: chain damage to nearby enemies on kill
+                        if (this.player.currentWeaponId === 'chain_shock') {
+                            const chainTargets = this.weapons.chainShock(enemy.x, enemy.y, proj.damage, this.enemies);
+                            for (const ct of chainTargets) {
+                                const { killed: chainKilled } = this.damage.dealDamageToEnemy(ct, Math.max(1, proj.damage - 1), 'chain');
+                                if (chainKilled) {
+                                    this.events.emit('enemy:killed', {
+                                        enemyId: ct.id, killer: 'chain',
+                                        x: ct.x, y: ct.y,
+                                        scoreValue: ct.scoreValue, comboValue: ct.comboValue,
+                                    });
+                                    this.vfx.emit('enemy_death', ct.x, ct.y);
+                                    this.spawnPickupAt(ct.x, ct.y);
+                                }
+                            }
+                        }
                         // Splitter: spawn 2 fragments on projectile kill
                         if (enemy instanceof Splitter) {
                             this.spawnSplitterFragments(enemy.x, enemy.y);
                         }
                         // Boss defeated
-                        if (enemy instanceof BloomHeart) {
+                        if (enemy instanceof BloomHeart || enemy instanceof DrillMother) {
                             this.vfx.emit('boss_death', enemy.x, enemy.y);
                             this.events.emit('boss:defeated', { bossId: enemy.id, timeMs: Date.now() });
                         }
@@ -441,7 +507,7 @@ export class World {
                         });
                         this.vfx.emit('enemy_death', enemy.x, enemy.y);
                         this.spawnPickupAt(enemy.x, enemy.y);
-                        if (enemy instanceof BloomHeart) {
+                        if (enemy instanceof BloomHeart || enemy instanceof DrillMother) {
                             this.vfx.emit('boss_death', enemy.x, enemy.y);
                             this.events.emit('boss:defeated', { bossId: enemy.id, timeMs: Date.now() });
                         }
@@ -603,8 +669,8 @@ export class World {
     }
     spawnEnemy(x, y, id) {
         // Allow extra capacity for bosses / elites
-        const limit = (id === 'sentinel_miniboss' || id === 'core_carrier' || id === 'bloom_heart')
-            ? MAX_ENEMIES + 4 : MAX_ENEMIES;
+        const bosses = ['sentinel_miniboss', 'core_carrier', 'bloom_heart', 'drill_mother', 'acid_wyrm', 'data_guardian'];
+        const limit = bosses.includes(id ?? '') ? MAX_ENEMIES + 4 : MAX_ENEMIES;
         if (this.enemies.length >= limit)
             return;
         let e;
@@ -636,11 +702,42 @@ export class World {
             case 'bloom_heart':
                 e = new BloomHeart();
                 break;
+            case 'ambusher':
+                e = new Ambusher();
+                break;
+            case 'bomber':
+                e = new Bomber();
+                break;
+            case 'mirror':
+                e = new Mirror();
+                break;
+            case 'swarm_mother':
+                e = new SwarmMother();
+                break;
+            case 'swarm_drone':
+                e = new SwarmDrone();
+                break;
+            case 'drill_mother':
+                e = new DrillMother();
+                break;
+            case 'acid_wyrm':
+                e = new AcidWyrm();
+                break;
+            case 'data_guardian':
+                e = new DataGuardian();
+                break;
             default:
                 e = new Hopper();
                 break;
         }
         e.reset(x, y);
+        // Apply biome-specific enemy modifiers
+        const hpMult = this.pacing.getEnemyHpMult();
+        if (hpMult !== 1.0) {
+            const bonusHp = Math.floor(e.maxHp * (hpMult - 1));
+            e.hp += bonusHp;
+            e.maxHp += bonusHp;
+        }
         this.enemies.push(e);
     }
     processEnemyShots() {
@@ -727,6 +824,106 @@ export class World {
             frag.vy = -(100 + Math.random() * 60);
             this.enemies.push(frag);
         }
+    }
+    detectNearMisses(dt) {
+        if (this.player.state === 'DEAD')
+            return;
+        this.nearMissCooldown -= dt;
+        if (this.nearMissCooldown > 0)
+            return;
+        const px = this.player.x;
+        const py = this.player.y;
+        const pb = this.player.getBounds();
+        for (const proj of this.enemyProjPool.active) {
+            if (!proj.active)
+                continue;
+            const dx = proj.x - px;
+            const dy = proj.y - py;
+            const dist = Math.hypot(dx, dy);
+            // Close but not overlapping with player hitbox
+            if (dist < this.NEAR_MISS_RADIUS && dist > 5) {
+                const projB = proj.getBounds();
+                if (!(projB.x + projB.w > pb.x && projB.x < pb.x + pb.w &&
+                    projB.y + projB.h > pb.y && projB.y < pb.y + pb.h)) {
+                    this.events.emit('near:miss', { distance: dist });
+                    this.vfx.emit('near_miss', proj.x, proj.y);
+                    this.nearMissCooldown = this.NEAR_MISS_COOLDOWN;
+                    break; // One near-miss per cooldown window
+                }
+            }
+        }
+    }
+    calculateThreatDensity() {
+        const px = this.player.x;
+        const py = this.player.y;
+        const threatRadius = 150;
+        let threats = 0;
+        for (const e of this.enemies) {
+            if (!e.active)
+                continue;
+            const d = Math.hypot(e.x - px, e.y - py);
+            if (d < threatRadius)
+                threats++;
+        }
+        for (const p of this.enemyProjPool.active) {
+            if (!p.active)
+                continue;
+            const d = Math.hypot(p.x - px, p.y - py);
+            if (d < threatRadius)
+                threats += 0.5;
+        }
+        // Normalize: 0 threats = 0, 8+ threats = 1
+        this.threatDensity = Math.min(1, threats / 8);
+    }
+    processBomberExplosions() {
+        for (const enemy of this.enemies) {
+            if (!enemy.active)
+                continue;
+            if (enemy instanceof Bomber && enemy.pendingExplosion) {
+                const ex = enemy.pendingExplosion.x;
+                const ey = enemy.pendingExplosion.y;
+                enemy.pendingExplosion = null;
+                // Deal damage to player if nearby
+                const dist = Math.hypot(this.player.x - ex, this.player.y - ey);
+                if (dist < 60 && this.player.state !== 'DEAD') {
+                    this.damage.dealDamageToPlayer(2, 'explosion');
+                    this.vfx.flash('#ff6622', 0.4, 0.3);
+                    this.vfx.shake.trigger(10);
+                }
+                // VFX
+                this.vfx.emit('enemy_death', ex, ey);
+                this.vfx.emit('stomp_impact', ex, ey);
+                this.vfx.shake.trigger(8);
+            }
+        }
+    }
+    processSwarmMotherSpawns() {
+        for (const enemy of this.enemies) {
+            if (!enemy.active)
+                continue;
+            if (enemy instanceof SwarmMother && enemy.pendingSpawns.length > 0) {
+                for (const spawn of enemy.pendingSpawns) {
+                    this.spawnEnemy(spawn.x, spawn.y, spawn.id);
+                }
+                enemy.pendingSpawns.length = 0;
+            }
+        }
+    }
+    updateBiomeHazards(dt) {
+        const biome = this.pacing.getBiomeId();
+        // Laser sweep timer (data_crypt)
+        if (biome === 'data_crypt') {
+            this.laserSweepTimer += dt;
+        }
+        // Darkness radius (void_core) — limited vision
+        if (biome === 'void_core') {
+            this.darknessRadius = 100;
+        }
+        else {
+            this.darknessRadius = 0;
+        }
+        // Acid pool damage (neon_gut) — handled in tile collision
+        // Tile types ACID_POOL, LASER, DARKNESS are handled in resolveTileCollisions
     }
     advanceChunks() {
         // Remove chunks scrolled well above viewport

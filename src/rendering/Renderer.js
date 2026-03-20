@@ -15,6 +15,7 @@ const ENTITY_PALETTE = {
 };
 export class Renderer {
     constructor(ctx, camera) {
+        this.heartbeatPhase = 0;
         this.ctx = ctx;
         this.camera = camera;
         this.layers = new LayerStack();
@@ -125,6 +126,15 @@ export class Renderer {
                     entCtx.fillRect(rx - 2, ry - 2, 4, 4);
                 }
             }
+            // Drones (if drone_support weapon active)
+            for (const drone of world.weapons.getDrones()) {
+                entCtx.fillStyle = '#ddaa22';
+                entCtx.globalAlpha = 0.5;
+                entCtx.fillRect(drone.x - 5, drone.y - 5, 10, 10);
+                entCtx.fillStyle = '#ffcc44';
+                entCtx.globalAlpha = 1;
+                entCtx.fillRect(drone.x - 3, drone.y - 3, 6, 6);
+            }
             // Player
             this.drawPlayer(entCtx, world.player, alpha);
             cam.restore(entCtx);
@@ -146,6 +156,57 @@ export class Renderer {
             ctx.fillStyle = world.vfx.flashColor;
             ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
             ctx.globalAlpha = 1;
+        }
+        // Near-death visual state: pulsating red vignette + desaturation at HP=1
+        if (world.player.hp === 1 && world.player.hp > 0 && world.player.state !== 'DEAD') {
+            this.heartbeatPhase += 1 / 60 * 6; // 6Hz pulse
+            const pulse = 0.15 + Math.sin(this.heartbeatPhase) * 0.1;
+            // Red vignette
+            const vigGrad = ctx.createRadialGradient(CANVAS_W / 2, CANVAS_H / 2, CANVAS_H * 0.2, CANVAS_W / 2, CANVAS_H / 2, CANVAS_H * 0.55);
+            vigGrad.addColorStop(0, 'transparent');
+            vigGrad.addColorStop(1, `rgba(180, 0, 0, ${pulse})`);
+            ctx.fillStyle = vigGrad;
+            ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+            // Desaturation overlay
+            ctx.globalAlpha = 0.08 + Math.sin(this.heartbeatPhase * 0.5) * 0.04;
+            ctx.fillStyle = '#222222';
+            ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+            ctx.globalAlpha = 1;
+            // Heartbeat edge pulse
+            const edgePulse = Math.max(0, Math.sin(this.heartbeatPhase)) * 0.25;
+            ctx.globalAlpha = edgePulse;
+            ctx.fillStyle = '#ff0022';
+            // Top edge
+            const topGrad = ctx.createLinearGradient(0, 0, 0, 30);
+            topGrad.addColorStop(0, '#ff0022');
+            topGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = topGrad;
+            ctx.fillRect(0, 0, CANVAS_W, 30);
+            // Bottom edge
+            const botGrad = ctx.createLinearGradient(0, CANVAS_H, 0, CANVAS_H - 30);
+            botGrad.addColorStop(0, '#ff0022');
+            botGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = botGrad;
+            ctx.fillRect(0, CANVAS_H - 30, CANVAS_W, 30);
+            ctx.globalAlpha = 1;
+        }
+        else {
+            this.heartbeatPhase = 0;
+        }
+        // Void Core darkness effect: limited vision radius
+        if (world.darknessRadius > 0) {
+            const px = world.player.renderX(alpha);
+            const py = world.player.renderY(alpha);
+            // Transform player world coords to screen coords
+            const screenX = CANVAS_W / 2 + (px - cam.x) * cam.zoom + cam.shakeOffsetX;
+            const screenY = CANVAS_H / 2 + (py - cam.y) * cam.zoom + cam.shakeOffsetY;
+            const radius = world.darknessRadius * cam.zoom;
+            const darkGrad = ctx.createRadialGradient(screenX, screenY, radius * 0.6, screenX, screenY, radius * 2);
+            darkGrad.addColorStop(0, 'transparent');
+            darkGrad.addColorStop(0.7, 'rgba(0, 0, 0, 0.6)');
+            darkGrad.addColorStop(1, 'rgba(0, 0, 0, 0.92)');
+            ctx.fillStyle = darkGrad;
+            ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
         }
     }
     drawBackground(ctx, cam, palette) {
@@ -194,16 +255,189 @@ export class Renderer {
             ctx.lineTo(CANVAS_W, y);
             ctx.stroke();
         }
-        // Floating particles (depth atmosphere)
+        // Floating particles (depth atmosphere — doubled count, varied sizes)
         ctx.globalAlpha = 0.15;
         ctx.fillStyle = palette.backgroundLine1;
         const particleOffset = cam.y * 0.08;
-        for (let i = 0; i < 12; i++) {
+        for (let i = 0; i < 20; i++) {
             const seed = i * 137.5; // golden angle scatter
             const px = ((seed * 7.3 + particleOffset * 0.3) % CANVAS_W);
             const py = ((seed * 13.7 + particleOffset) % CANVAS_H);
-            const size = 2 + (i % 3);
+            const size = 1 + (i % 4);
             ctx.fillRect(px, py, size, size);
+        }
+        // Biome-specific background elements
+        this.drawBiomeBackground(ctx, cam, palette);
+        ctx.globalAlpha = 1;
+    }
+    drawBiomeBackground(ctx, cam, palette) {
+        const depth = cam.y;
+        const time = Date.now() / 1000;
+        // Surface Fracture: falling debris particles + flickering distant lights
+        if (depth < 2000) {
+            // Falling debris
+            ctx.fillStyle = palette.backgroundLine1;
+            ctx.globalAlpha = 0.12;
+            for (let i = 0; i < 8; i++) {
+                const seed = i * 97.3;
+                const px = (seed * 3.7) % CANVAS_W;
+                const py = (seed * 11.3 + time * 30 + cam.y * 0.03) % CANVAS_H;
+                ctx.fillRect(px, py, 1 + (i % 3), 2 + (i % 4));
+            }
+            // Distant flickering lights
+            ctx.globalAlpha = 0.06 + Math.sin(time * 2 + 1.3) * 0.03;
+            ctx.fillStyle = '#44ddff';
+            for (let i = 0; i < 4; i++) {
+                const lx = (i * 89 + 20) % CANVAS_W;
+                const ly = (i * 137 + cam.y * 0.01) % CANVAS_H;
+                const flicker = Math.sin(time * (3 + i) + i * 2.7) > 0.3 ? 1 : 0;
+                if (flicker)
+                    ctx.fillRect(lx, ly, 2, 2);
+            }
+        }
+        // Neon Gut: pulsing organic veins + dripping particles
+        if (depth >= 2000 && depth < 4000) {
+            // Pulsing veins
+            ctx.strokeStyle = palette.backgroundLine2;
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.08 + Math.sin(time * 1.5) * 0.03;
+            const veinOffset = cam.y * 0.06;
+            for (let i = 0; i < 3; i++) {
+                const baseX = (i * 120 + 30) % CANVAS_W;
+                ctx.beginPath();
+                for (let y = 0; y < CANVAS_H; y += 20) {
+                    const x = baseX + Math.sin((y + veinOffset) * 0.03 + i) * 15;
+                    if (y === 0)
+                        ctx.moveTo(x, y);
+                    else
+                        ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+            // Dripping particles
+            ctx.fillStyle = '#ff44aa';
+            ctx.globalAlpha = 0.1;
+            for (let i = 0; i < 6; i++) {
+                const dx = (i * 57 + 10) % CANVAS_W;
+                const dy = (time * 40 + i * 107 + cam.y * 0.08) % CANVAS_H;
+                ctx.fillRect(dx, dy, 1, 3 + (i % 3));
+            }
+        }
+        // Data Crypt: scrolling data streams + glitch bars
+        if (depth >= 4000 && depth < 6000) {
+            // Vertical data streams
+            ctx.fillStyle = palette.backgroundLine2;
+            ctx.globalAlpha = 0.08;
+            const streamOffset = cam.y * 0.25;
+            for (let i = 0; i < 8; i++) {
+                const sx = (i * 47 + streamOffset * 0.1) % CANVAS_W;
+                const h = 10 + (i * 17 % 40);
+                const sy = (streamOffset * (1 + i * 0.2) + i * 43) % CANVAS_H;
+                ctx.fillRect(sx, sy, 2, h);
+            }
+            // Horizontal glitch bars
+            ctx.fillStyle = '#44ffaa';
+            ctx.globalAlpha = 0.03;
+            const glitchSeed = Math.floor(time * 4);
+            for (let i = 0; i < 3; i++) {
+                const gy = ((glitchSeed * 73 + i * 211) % CANVAS_H);
+                const gw = 20 + ((glitchSeed * 37 + i * 97) % 60);
+                const gx = ((glitchSeed * 53 + i * 139) % CANVAS_W);
+                ctx.fillRect(gx, gy, gw, 2);
+            }
+        }
+        // Hollow Market: warm floating lanterns + gentle ambient glow
+        if (depth >= 6000 && depth < 7500) {
+            // Floating lantern-like lights
+            ctx.globalAlpha = 0.12;
+            for (let i = 0; i < 6; i++) {
+                const seed = i * 127.7;
+                const lx = (seed * 2.3 + Math.sin(time * 0.5 + i * 1.8) * 20) % CANVAS_W;
+                const ly = (seed * 5.1 + cam.y * 0.04 + Math.sin(time * 0.7 + i) * 10) % CANVAS_H;
+                const glow = 0.08 + Math.sin(time * 1.2 + i * 2.1) * 0.04;
+                ctx.fillStyle = '#ffcc88';
+                ctx.globalAlpha = glow;
+                ctx.fillRect(lx - 3, ly - 3, 6, 6);
+                ctx.globalAlpha = glow * 0.4;
+                ctx.fillRect(lx - 6, ly - 6, 12, 12);
+            }
+            // Warm ambient glow band
+            ctx.globalAlpha = 0.04 + Math.sin(time * 0.3) * 0.01;
+            const grad = ctx.createLinearGradient(0, CANVAS_H * 0.3, 0, CANVAS_H * 0.7);
+            grad.addColorStop(0, 'transparent');
+            grad.addColorStop(0.5, '#332244');
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+        }
+        // Molten Grid: heat distortion waves + ember particles + lava glow
+        if (depth >= 7500 && depth < 9500) {
+            // Heat distortion waves
+            ctx.strokeStyle = palette.backgroundLine1;
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.06;
+            const heatOffset = cam.y * 0.12;
+            for (let y = 0; y < CANVAS_H; y += 40) {
+                ctx.beginPath();
+                for (let x = 0; x < CANVAS_W; x += 8) {
+                    const oy = y + Math.sin((x + heatOffset + time * 30) * 0.04) * 4;
+                    if (x === 0)
+                        ctx.moveTo(x, oy);
+                    else
+                        ctx.lineTo(x, oy);
+                }
+                ctx.stroke();
+            }
+            // Rising ember particles
+            ctx.fillStyle = '#ff6622';
+            ctx.globalAlpha = 0.15;
+            for (let i = 0; i < 10; i++) {
+                const ex = (i * 37 + 15) % CANVAS_W;
+                const ey = CANVAS_H - ((time * 50 + i * 67 + cam.y * 0.05) % CANVAS_H);
+                const sz = 1 + (i % 2);
+                ctx.globalAlpha = 0.1 + (ey / CANVAS_H) * 0.1;
+                ctx.fillRect(ex, ey, sz, sz);
+            }
+            // Bottom lava glow
+            ctx.globalAlpha = 0.06 + Math.sin(time * 0.8) * 0.02;
+            const lavaGrad = ctx.createLinearGradient(0, CANVAS_H * 0.8, 0, CANVAS_H);
+            lavaGrad.addColorStop(0, 'transparent');
+            lavaGrad.addColorStop(1, '#ff440022');
+            ctx.fillStyle = lavaGrad;
+            ctx.fillRect(0, CANVAS_H * 0.8, CANVAS_W, CANVAS_H * 0.2);
+        }
+        // Void Core: static interference + blood-red flickers + reality tears
+        if (depth >= 9500) {
+            // Static interference
+            ctx.fillStyle = '#ff0011';
+            ctx.globalAlpha = 0.03;
+            for (let i = 0; i < 12; i++) {
+                const sx = Math.random() * CANVAS_W;
+                const sy = Math.random() * CANVAS_H;
+                ctx.fillRect(sx, sy, 1 + Math.random() * 4, 1);
+            }
+            // Reality tear lines
+            ctx.strokeStyle = '#ff2244';
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.05 + Math.sin(time * 3) * 0.02;
+            const tearSeed = Math.floor(time * 2);
+            for (let i = 0; i < 2; i++) {
+                const tx = ((tearSeed * 73 + i * 157) % CANVAS_W);
+                const ty = ((tearSeed * 47 + i * 113) % (CANVAS_H * 0.8));
+                const tLen = 10 + ((tearSeed * 31 + i * 89) % 30);
+                ctx.beginPath();
+                ctx.moveTo(tx, ty);
+                ctx.lineTo(tx + ((tearSeed * 11 + i * 7) % 20) - 10, ty + tLen);
+                ctx.stroke();
+            }
+            // Pulsing crimson vignette
+            const voidPulse = 0.04 + Math.sin(time * 2) * 0.02;
+            const voidGrad = ctx.createRadialGradient(CANVAS_W / 2, CANVAS_H / 2, CANVAS_H * 0.2, CANVAS_W / 2, CANVAS_H / 2, CANVAS_H * 0.6);
+            voidGrad.addColorStop(0, 'transparent');
+            voidGrad.addColorStop(1, `rgba(120, 0, 0, ${voidPulse})`);
+            ctx.fillStyle = voidGrad;
+            ctx.globalAlpha = 1;
+            ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
         }
         ctx.globalAlpha = 1;
     }
@@ -267,6 +501,38 @@ export class Renderer {
                         ctx.fillStyle = '#88ffaa';
                         ctx.fillRect(wx + TILE_SIZE / 2 - 3, wy + TILE_SIZE - 10, 6, 4);
                         break;
+                    case TileType.ACID_POOL:
+                        ctx.fillStyle = '#88ff22';
+                        ctx.globalAlpha = 0.4 + Math.sin(Date.now() / 300 + wx * 0.1) * 0.2;
+                        ctx.fillRect(wx, wy + TILE_SIZE - 8, TILE_SIZE, 8);
+                        // Bubbles
+                        ctx.fillStyle = '#aaff44';
+                        ctx.globalAlpha = 0.6;
+                        const bx = wx + 5 + Math.sin(Date.now() / 500 + wx) * 4;
+                        ctx.fillRect(bx, wy + TILE_SIZE - 12, 3, 3);
+                        ctx.fillRect(bx + 12, wy + TILE_SIZE - 10, 2, 2);
+                        ctx.globalAlpha = 1;
+                        break;
+                    case TileType.LASER: {
+                        const laserPhase = (Date.now() / 1000) % 4;
+                        const laserActive = laserPhase < 1;
+                        // Warning indicator
+                        ctx.fillStyle = laserActive ? '#cc44ff' : '#442266';
+                        ctx.globalAlpha = laserActive ? (0.5 + Math.sin(Date.now() / 80) * 0.3) : 0.3;
+                        ctx.fillRect(wx, wy + TILE_SIZE / 2 - 2, TILE_SIZE, 4);
+                        // Emitter dot on left
+                        ctx.fillStyle = laserActive ? '#ff44ff' : '#664488';
+                        ctx.fillRect(wx, wy + TILE_SIZE / 2 - 4, 4, 8);
+                        ctx.globalAlpha = 1;
+                        break;
+                    }
+                    case TileType.DARKNESS:
+                        // Darkness tiles just render as slightly darker empty
+                        ctx.fillStyle = '#000000';
+                        ctx.globalAlpha = 0.3;
+                        ctx.fillRect(wx, wy, TILE_SIZE, TILE_SIZE);
+                        ctx.globalAlpha = 1;
+                        break;
                 }
             }
         }
@@ -282,7 +548,12 @@ export class Renderer {
         if (player.isInvulnerable && Math.floor(player.invulnTimer * 10) % 2 === 0) {
             ctx.globalAlpha = 0.4;
         }
-        // Glow
+        // Enhanced outer glow (larger, softer)
+        ctx.fillStyle = ENTITY_PALETTE.playerGlow;
+        ctx.globalAlpha *= 0.15;
+        ctx.fillRect(rx - hw - 6, ry - hh - 6, player.hitbox.width + 12, player.hitbox.height + 12);
+        ctx.globalAlpha = player.isInvulnerable && Math.floor(player.invulnTimer * 10) % 2 === 0 ? 0.4 : 1;
+        // Inner glow
         ctx.fillStyle = ENTITY_PALETTE.playerGlow;
         ctx.globalAlpha *= 0.3;
         ctx.fillRect(rx - hw - 3, ry - hh - 3, player.hitbox.width + 6, player.hitbox.height + 6);
@@ -293,15 +564,43 @@ export class Renderer {
                 ENTITY_PALETTE.playerBody;
         ctx.fillStyle = bodyColor;
         ctx.fillRect(rx - hw, ry - hh, player.hitbox.width, player.hitbox.height);
+        // Shoulder accents
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha *= 0.6;
+        ctx.fillRect(rx - hw, ry - hh, 3, 3);
+        ctx.fillRect(rx + hw - 3, ry - hh, 3, 3);
+        ctx.globalAlpha = player.isInvulnerable && Math.floor(player.invulnTimer * 10) % 2 === 0 ? 0.4 : 1;
         // Eyes (simple 2-pixel dots)
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(rx - 4, ry - 4, 3, 3);
         ctx.fillRect(rx + 2, ry - 4, 3, 3);
-        // Stomp trail
+        // Stomp trail (enhanced with multiple layers)
         if (player.state === 'STOMPING') {
             ctx.fillStyle = '#ff6622';
             ctx.globalAlpha = 0.5;
             ctx.fillRect(rx - hw + 2, ry - hh - 8, player.hitbox.width - 4, 8);
+            ctx.fillStyle = '#ffaa44';
+            ctx.globalAlpha = 0.25;
+            ctx.fillRect(rx - hw + 4, ry - hh - 16, player.hitbox.width - 8, 8);
+            ctx.globalAlpha = 1;
+        }
+        // Dash trail (afterimage)
+        if (player.state === 'DASHING') {
+            ctx.fillStyle = ENTITY_PALETTE.playerDash;
+            ctx.globalAlpha = 0.2;
+            ctx.fillRect(rx - hw, ry + hh, player.hitbox.width, 12);
+            ctx.fillStyle = '#ffffff';
+            ctx.globalAlpha = 0.1;
+            ctx.fillRect(rx - hw + 2, ry + hh + 8, player.hitbox.width - 4, 8);
+            ctx.globalAlpha = 1;
+        }
+        // Wall slide sparks
+        if (player.state === 'WALL_SLIDING') {
+            const wallSide = player.touchingWallLeft ? -hw : hw;
+            ctx.fillStyle = '#ffcc44';
+            ctx.globalAlpha = 0.5 + Math.random() * 0.3;
+            ctx.fillRect(rx + wallSide - 1, ry - 2 + Math.random() * 8, 2, 2);
+            ctx.fillRect(rx + wallSide - 1, ry + 4 + Math.random() * 8, 2, 2);
             ctx.globalAlpha = 1;
         }
         ctx.globalAlpha = 1;

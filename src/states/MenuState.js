@@ -87,13 +87,13 @@ export class MenuState {
         else if (this.touchStarted === 'new') {
             this.game.pendingRunState = null;
             this.game.save.clearRun();
-            this.game.states.transition('PLAYING');
+            this.game.states.transition('LOADOUT');
         }
         else if (this.touchStarted === 'daily') {
             this.game.pendingRunState = null;
             this.game.save.clearRun();
             this.game.pendingDailyRun = true;
-            this.game.states.transition('PLAYING');
+            this.game.states.transition('LOADOUT');
         }
     }
     render(_alpha) {

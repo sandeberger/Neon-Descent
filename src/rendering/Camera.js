@@ -9,6 +9,8 @@ export class Camera {
         this.shakeOffsetY = 0;
         this.lookAhead = 120;
         this.smoothSpeed = 8;
+        /** Threat density: 0–1, how many enemies/projectiles are near the player */
+        this.threatDensity = 0;
     }
     get top() { return this.y - (CANVAS_H / 2) / this.zoom; }
     get bottom() { return this.y + (CANVAS_H / 2) / this.zoom; }
@@ -17,8 +19,10 @@ export class Camera {
     update(playerY, dt, intensity) {
         const targetY = playerY + this.lookAhead;
         this.y = lerp(this.y, targetY, this.smoothSpeed * dt);
-        // Dynamic zoom: zoom out slightly when intensity is high
-        const targetZoom = 1.0 - intensity * 0.08;
+        // Dynamic zoom: zoom out based on combo intensity AND threat density
+        const comboZoom = intensity * 0.08;
+        const threatZoom = this.threatDensity * 0.07;
+        const targetZoom = 1.0 - Math.max(comboZoom, threatZoom);
         this.zoom = lerp(this.zoom, targetZoom, 3 * dt);
         this.zoom = clamp(this.zoom, 0.85, 1.0);
     }

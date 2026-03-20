@@ -9,11 +9,18 @@ import { PlayingState } from '@states/PlayingState';
 import { DeadState } from '@states/DeadState';
 import { PausedState } from '@states/PausedState';
 import { MetaShopState } from '@states/MetaShopState';
+import { LoadoutState } from '@states/LoadoutState';
 import { RunShopState } from '@states/RunShopState';
 import { MetaProgression } from '@meta/MetaProgression';
 import { SaveManager } from '@save/SaveManager';
 import { InstallPrompt } from '@ui/InstallPrompt';
 import { AnalyticsManager } from '@analytics/AnalyticsManager';
+import { AchievementSystem } from '@systems/AchievementSystem';
+import { LeaderboardSystem } from '@systems/LeaderboardSystem';
+import { AccessibilitySettings } from '@systems/AccessibilitySettings';
+import { CosmeticsSystem } from '@systems/CosmeticsSystem';
+import { CodexSystem } from '@systems/CodexSystem';
+import { RunModifierSystem } from '@systems/RunModifierSystem';
 export class Game {
     constructor(canvas) {
         this.canvasScale = 1;
@@ -26,11 +33,18 @@ export class Game {
         this.lastRunShardsEarned = 0;
         this.lastRunWasBestScore = false;
         this.lastRunWasBestDepth = false;
+        this.lastRunDeathCause = '';
+        this.lastRunKills = 0;
+        this.lastRunEliteKills = 0;
+        this.lastRunNoDamageChunks = 0;
         // Daily run flags
         this.pendingDailyRun = false;
         this.lastRunWasDaily = false;
         // Saved run resume
         this.pendingRunState = null;
+        // Loadout selections (set by LoadoutState, read by PlayingState)
+        this.pendingLoadoutWeapon = null;
+        this.pendingLoadoutPerk = null;
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d', { alpha: false });
         this.states = new StateMachine();
@@ -41,6 +55,12 @@ export class Game {
         this.installPrompt = new InstallPrompt();
         this.installPrompt.init();
         this.analytics = new AnalyticsManager();
+        this.achievements = new AchievementSystem();
+        this.leaderboard = new LeaderboardSystem();
+        this.accessibility = new AccessibilitySettings();
+        this.cosmetics = new CosmeticsSystem();
+        this.codex = new CodexSystem();
+        this.runModifiers = new RunModifierSystem();
         this.loop = new GameLoop((dt) => this.states.fixedUpdate(dt), (alpha) => this.states.render(alpha));
         this.setupCanvas();
         this.registerStates();
@@ -101,12 +121,16 @@ export class Game {
         this.states.register(new DeadState(this));
         this.states.register(new PausedState(this));
         this.states.register(new RunShopState(this));
+        this.states.register(new LoadoutState(this));
         this.states.register(new MetaShopState(this, this.meta));
     }
     async start() {
         await this.save.init();
         await this.meta.init(this.save.db);
         this.analytics.init(this.save.db);
+        await this.leaderboard.init(this.save.db);
+        await this.cosmetics.init(this.save.db);
+        await this.codex.init(this.save.db);
         this.pendingRunState = await this.save.loadRun();
         this.states.transition('BOOT');
         this.loop.start();

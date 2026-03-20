@@ -6,4 +6,7 @@ export var TileType;
     TileType[TileType["HAZARD"] = 3] = "HAZARD";
     TileType[TileType["BREAKABLE"] = 4] = "BREAKABLE";
     TileType[TileType["BOUNCE"] = 5] = "BOUNCE";
+    TileType[TileType["ACID_POOL"] = 6] = "ACID_POOL";
+    TileType[TileType["LASER"] = 7] = "LASER";
+    TileType[TileType["DARKNESS"] = 8] = "DARKNESS";
 })(TileType || (TileType = {}));

@@ -13,7 +13,7 @@ export class AudioSystem {
     }
     init(events) {
         // Wire game events to sounds
-        events.on('weapon:fire', () => this.playShoot());
+        events.on('weapon:fire', (d) => this.playShoot(d.weaponId));
         events.on('player:stomp', () => this.playStomp());
         events.on('player:dash', () => this.playDash());
         events.on('stomp:hit', () => this.playStompHit());
@@ -26,6 +26,10 @@ export class AudioSystem {
         events.on('combo:increment', (d) => this.playComboTick(d.tier));
         events.on('combo:break', () => this.playComboBreak());
         events.on('player:wallslide', () => this.playWallSlide());
+        events.on('near:miss', () => this.playNearMiss());
+        events.on('chain:hit', () => this.playChainShock());
+        events.on('boss:defeated', () => this.playBossDefeat());
+        events.on('achievement:unlocked', () => this.playAchievement());
     }
     /** Must be called from a user gesture to unlock AudioContext on mobile */
     unlock() {
@@ -54,7 +58,23 @@ export class AudioSystem {
         return this.ctx;
     }
     // ─── SFX ─────────────────────────────────────────────
-    playShoot() {
+    playShoot(weaponId) {
+        // Route to weapon-specific SFX
+        if (weaponId === 'chain_shock') {
+            this.playChainShockFire();
+            return;
+        }
+        if (weaponId === 'acid_scatter') {
+            this.playAcidScatterFire();
+            return;
+        }
+        if (weaponId === 'drone_support') {
+            this.playDroneFire();
+            return;
+        }
+        this._playShoot();
+    }
+    _playShoot() {
         const ctx = this.ensureCtx();
         if (!ctx)
             return;
@@ -351,6 +371,144 @@ export class AudioSystem {
         noise.connect(filter).connect(gain).connect(this.sfxGain);
         noise.start(now);
         noise.stop(now + 0.1);
+    }
+    // ─── NEW SFX ────────────────────────────────────────
+    playNearMiss() {
+        const ctx = this.ensureCtx();
+        if (!ctx)
+            return;
+        const now = ctx.currentTime;
+        // Quick high-pitched whoosh
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1200, now);
+        osc.frequency.exponentialRampToValueAtTime(2400, now + 0.06);
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        osc.connect(gain).connect(this.sfxGain);
+        osc.start(now);
+        osc.stop(now + 0.08);
+    }
+    playChainShockFire() {
+        const ctx = this.ensureCtx();
+        if (!ctx)
+            return;
+        const now = ctx.currentTime;
+        // Electric zap
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.setValueAtTime(1800, now + 0.02);
+        osc.frequency.setValueAtTime(400, now + 0.05);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        osc.connect(gain).connect(this.sfxGain);
+        osc.start(now);
+        osc.stop(now + 0.08);
+    }
+    playChainShock() {
+        const ctx = this.ensureCtx();
+        if (!ctx)
+            return;
+        const now = ctx.currentTime;
+        // Chain link zap
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(2000, now + 0.04);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        osc.connect(gain).connect(this.sfxGain);
+        osc.start(now);
+        osc.stop(now + 0.06);
+    }
+    playAcidScatterFire() {
+        const ctx = this.ensureCtx();
+        if (!ctx)
+            return;
+        const now = ctx.currentTime;
+        // Splattery noise
+        const noise = this.createNoise(ctx, 0.1);
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 1200;
+        filter.Q.value = 1.5;
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        noise.connect(filter).connect(gain).connect(this.sfxGain);
+        noise.start(now);
+        noise.stop(now + 0.1);
+    }
+    playDroneFire() {
+        const ctx = this.ensureCtx();
+        if (!ctx)
+            return;
+        const now = ctx.currentTime;
+        // Tiny pew
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1400, now);
+        osc.frequency.exponentialRampToValueAtTime(700, now + 0.04);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        osc.connect(gain).connect(this.sfxGain);
+        osc.start(now);
+        osc.stop(now + 0.05);
+    }
+    playBossDefeat() {
+        const ctx = this.ensureCtx();
+        if (!ctx)
+            return;
+        const now = ctx.currentTime;
+        // Victory fanfare: ascending chord
+        for (let i = 0; i < 5; i++) {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const t = now + i * 0.1;
+            osc.type = 'sine';
+            osc.frequency.value = 400 + i * 100;
+            gain.gain.setValueAtTime(0.08, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+            osc.connect(gain).connect(this.sfxGain);
+            osc.start(t);
+            osc.stop(t + 0.5);
+        }
+        // Bright noise burst
+        const noise = this.createNoise(ctx, 0.3);
+        const nGain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 3000;
+        nGain.gain.setValueAtTime(0.15, now);
+        nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        noise.connect(filter).connect(nGain).connect(this.sfxGain);
+        noise.start(now);
+        noise.stop(now + 0.3);
+    }
+    playAchievement() {
+        const ctx = this.ensureCtx();
+        if (!ctx)
+            return;
+        const now = ctx.currentTime;
+        // Chime: ascending 4 notes
+        const notes = [660, 880, 1100, 1320];
+        for (let i = 0; i < notes.length; i++) {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const t = now + i * 0.08;
+            osc.type = 'sine';
+            osc.frequency.value = notes[i];
+            gain.gain.setValueAtTime(0.07, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+            osc.connect(gain).connect(this.sfxGain);
+            osc.start(t);
+            osc.stop(t + 0.2);
+        }
     }
     // ─── ADAPTIVE MUSIC ─────────────────────────────────
     startMusic() {

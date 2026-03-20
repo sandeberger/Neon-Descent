@@ -18,9 +18,12 @@ const BIOME_MUSIC: Record<string, BiomeMusic> = {
   surface_fracture: { rootNote: 55,  scale: [0, 3, 5, 7, 10], bpm: 110, timbre: 'sawtooth' },
   neon_gut:         { rootNote: 49,  scale: [0, 2, 5, 7, 10], bpm: 120, timbre: 'square' },
   data_crypt:       { rootNote: 44,  scale: [0, 3, 5, 7, 10], bpm: 125, timbre: 'triangle' },
+  hollow_market:    { rootNote: 52,  scale: [0, 2, 4, 7, 9],  bpm: 95,  timbre: 'sine' },
   molten_grid:      { rootNote: 41,  scale: [0, 2, 3, 7, 10], bpm: 130, timbre: 'sawtooth' },
   void_core:        { rootNote: 37,  scale: [0, 3, 5, 6, 10], bpm: 140, timbre: 'square' },
 };
+
+const CROSSFADE_DURATION = 2; // seconds
 
 export class MusicManager {
   private ctx: AudioContext | null = null;
@@ -38,6 +41,10 @@ export class MusicManager {
   // State
   private currentBiome = 'surface_fracture';
   private biomeParams: BiomeMusic = BIOME_MUSIC['surface_fracture']!;
+
+  // Drone tracking for crossfade
+  private droneNodes: (OscillatorNode | AudioNode)[] = [];
+  private droneGains: GainNode[] = [];
 
   // Noise buffer (shared)
   private noiseBuffer: AudioBuffer | null = null;
@@ -80,6 +87,7 @@ export class MusicManager {
       clearInterval(this.schedulerTimer);
       this.schedulerTimer = null;
     }
+    this.stopDrones(0);
     for (const gain of this.layerGains) {
       gain.disconnect();
     }
@@ -106,23 +114,62 @@ export class MusicManager {
 
   transitionBiome(biomeId: string): void {
     if (biomeId === this.currentBiome) return;
+    if (!this.ctx) return;
     this.currentBiome = biomeId;
     this.biomeParams = BIOME_MUSIC[biomeId] ?? BIOME_MUSIC['surface_fracture']!;
+
+    // Crossfade: fade out old drones, start new ones
+    this.stopDrones(CROSSFADE_DURATION);
+    this.startAmbientDrone();
   }
 
   // ── Layer 0: Ambient Drone ──
+
+  private stopDrones(fadeTime: number): void {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    for (const g of this.droneGains) {
+      g.gain.linearRampToValueAtTime(0, now + fadeTime);
+    }
+    // Schedule disconnect after fade
+    const oldNodes = [...this.droneNodes];
+    const oldGains = [...this.droneGains];
+    if (fadeTime > 0) {
+      setTimeout(() => {
+        for (const n of oldNodes) {
+          try { if ('stop' in n) (n as OscillatorNode).stop(); } catch {}
+          try { n.disconnect(); } catch {}
+        }
+        for (const g of oldGains) {
+          try { g.disconnect(); } catch {}
+        }
+      }, fadeTime * 1000 + 100);
+    } else {
+      for (const n of oldNodes) {
+        try { if ('stop' in n) (n as OscillatorNode).stop(); } catch {}
+        try { n.disconnect(); } catch {}
+      }
+      for (const g of oldGains) {
+        try { g.disconnect(); } catch {}
+      }
+    }
+    this.droneNodes = [];
+    this.droneGains = [];
+  }
 
   private startAmbientDrone(): void {
     const ctx = this.ctx!;
     const gain = this.layerGains[0]!;
     const root = this.biomeParams.rootNote;
+    const now = ctx.currentTime;
 
     // Root drone
     const osc1 = ctx.createOscillator();
     osc1.type = 'sawtooth';
     osc1.frequency.value = root;
     const osc1Gain = ctx.createGain();
-    osc1Gain.gain.value = 0.12;
+    osc1Gain.gain.setValueAtTime(0, now);
+    osc1Gain.gain.linearRampToValueAtTime(0.12, now + CROSSFADE_DURATION);
     const filter1 = ctx.createBiquadFilter();
     filter1.type = 'lowpass';
     filter1.frequency.value = 200;
@@ -144,7 +191,8 @@ export class MusicManager {
     osc2.type = 'sawtooth';
     osc2.frequency.value = root * 1.5;
     const osc2Gain = ctx.createGain();
-    osc2Gain.gain.value = 0.06;
+    osc2Gain.gain.setValueAtTime(0, now);
+    osc2Gain.gain.linearRampToValueAtTime(0.06, now + CROSSFADE_DURATION);
     const filter2 = ctx.createBiquadFilter();
     filter2.type = 'lowpass';
     filter2.frequency.value = 150;
@@ -156,9 +204,14 @@ export class MusicManager {
     sub.type = 'sine';
     sub.frequency.value = root / 2;
     const subGain = ctx.createGain();
-    subGain.gain.value = 0.15;
+    subGain.gain.setValueAtTime(0, now);
+    subGain.gain.linearRampToValueAtTime(0.15, now + CROSSFADE_DURATION);
     sub.connect(subGain).connect(gain);
     sub.start();
+
+    // Track for crossfade cleanup
+    this.droneNodes = [osc1, osc2, sub, lfo];
+    this.droneGains = [osc1Gain, osc2Gain, subGain];
   }
 
   // ── Scheduling ──

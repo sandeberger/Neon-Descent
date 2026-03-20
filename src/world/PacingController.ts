@@ -9,6 +9,7 @@ const BIOME_ENEMY_MODS: Record<string, { speedMult: number; hpMult: number }> = 
   surface_fracture: { speedMult: 1.0, hpMult: 1.0 },
   neon_gut:         { speedMult: 1.15, hpMult: 1.1 },
   data_crypt:       { speedMult: 1.0, hpMult: 1.3 },
+  hollow_market:    { speedMult: 0.7, hpMult: 0.8 },  // Safe zone — fewer/weaker enemies
   molten_grid:      { speedMult: 1.3, hpMult: 1.2 },
   void_core:        { speedMult: 1.5, hpMult: 1.5 },
 };
@@ -45,6 +46,11 @@ export class PacingController {
   /** Get enemy HP multiplier for current biome */
   getEnemyHpMult(): number {
     return BIOME_ENEMY_MODS[this.getBiomeId()]?.hpMult ?? 1.0;
+  }
+
+  /** Whether the current biome is a safe zone (fewer enemies, more shops/recovery) */
+  isSafeZone(): boolean {
+    return this.getBiomeId() === 'hollow_market';
   }
 
   reset(): void {

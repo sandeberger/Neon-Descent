@@ -1,11 +1,13 @@
 import { GestureRecognizer } from './GestureRecognizer';
 import { InputBuffer } from './InputBuffer';
+import { AlternativeInputMode } from './AlternativeInput';
 import { GestureType, emptyInputFrame } from './InputTypes';
 export class InputManager {
     constructor() {
         // Keyboard state (desktop fallback)
         this.keys = new Set();
         this.canvasScale = 1;
+        this.canvas = null;
         // Prevent keyboard repeat from flooding the buffer
         this.consumedThisFrame = new Set();
         this.onKeyDown = (e) => {
@@ -16,15 +18,22 @@ export class InputManager {
         };
         this.gesture = new GestureRecognizer();
         this.buffer = new InputBuffer();
+        this.altInput = new AlternativeInputMode();
     }
     bind(canvas, canvasScale) {
         this.canvasScale = canvasScale;
+        this.canvas = canvas;
         this.gesture.bind(canvas);
+        if (this.altInput.enabled) {
+            this.altInput.bind(canvas);
+        }
         window.addEventListener('keydown', this.onKeyDown);
         window.addEventListener('keyup', this.onKeyUp);
     }
     unbind(canvas) {
         this.gesture.unbind(canvas);
+        this.altInput.unbind(canvas);
+        this.canvas = null;
         window.removeEventListener('keydown', this.onKeyDown);
         window.removeEventListener('keyup', this.onKeyUp);
     }
@@ -34,25 +43,38 @@ export class InputManager {
     /** Build the input frame for this tick, consuming buffered gestures */
     buildFrame() {
         const frame = emptyInputFrame();
-        // Process touch gestures
-        const gestures = this.gesture.consumeGestures();
-        for (const g of gestures) {
-            switch (g) {
-                case GestureType.SWIPE_DOWN:
-                    this.buffer.push('stomp');
-                    break;
-                case GestureType.SWIPE_UP:
-                    this.buffer.push('dash');
-                    break;
-                case GestureType.DOUBLE_TAP:
-                    this.buffer.push('special');
-                    break;
-            }
+        // Alternative input mode: simpler touch layout
+        if (this.altInput.enabled && this.canvas) {
+            const rect = this.canvas.getBoundingClientRect();
+            this.altInput.updateMoveX(this.canvasScale, rect);
+            frame.moveX = this.altInput.moveX;
+            frame.fire = true; // auto-fire in alt mode
+            if (this.altInput.consumeStomp())
+                this.buffer.push('stomp');
+            if (this.altInput.consumeDash())
+                this.buffer.push('dash');
         }
-        // Touch movement
-        frame.moveX = this.gesture.getMoveX(this.canvasScale);
-        // Touch fire (hold right side)
-        frame.fire = this.gesture.isHolding();
+        else {
+            // Process touch gestures (standard mode)
+            const gestures = this.gesture.consumeGestures();
+            for (const g of gestures) {
+                switch (g) {
+                    case GestureType.SWIPE_DOWN:
+                        this.buffer.push('stomp');
+                        break;
+                    case GestureType.SWIPE_UP:
+                        this.buffer.push('dash');
+                        break;
+                    case GestureType.DOUBLE_TAP:
+                        this.buffer.push('special');
+                        break;
+                }
+            }
+            // Touch movement
+            frame.moveX = this.gesture.getMoveX(this.canvasScale);
+            // Touch fire (hold right side)
+            frame.fire = this.gesture.isHolding();
+        }
         // Keyboard fallback
         if (this.keys.has('ArrowLeft') || this.keys.has('KeyA'))
             frame.moveX = -1;

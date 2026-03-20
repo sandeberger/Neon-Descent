@@ -7,6 +7,8 @@ export class VFXSystem {
         this.flashAlpha = 0;
         this.flashColor = '#ffffff';
         this.flashDecay = 0;
+        /** Multiplier for flash intensity (set by accessibility settings, default 1.0) */
+        this.flashMultiplier = 1.0;
         this.particles = new ParticlePool();
         this.shake = new ScreenShake();
         this.hitStop = new HitStop();
@@ -19,8 +21,8 @@ export class VFXSystem {
     }
     flash(color, alpha, duration) {
         this.flashColor = color;
-        this.flashAlpha = alpha;
-        this.flashDecay = alpha / duration;
+        this.flashAlpha = alpha * this.flashMultiplier;
+        this.flashDecay = (alpha * this.flashMultiplier) / duration;
     }
     update(dt) {
         this.particles.update(dt);

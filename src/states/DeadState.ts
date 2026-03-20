@@ -12,14 +12,23 @@ function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * Math.min(1, t);
 }
 
+const DEATH_CAUSE_LABELS: Record<string, string> = {
+  enemy: 'CRUSHED BY ENEMY',
+  hazard: 'HIT A HAZARD',
+  acid: 'DISSOLVED IN ACID',
+  laser: 'CUT BY LASER',
+  beam: 'VAPORIZED BY BEAM',
+  explosion: 'CAUGHT IN EXPLOSION',
+};
+
 export class DeadState implements GameState {
   readonly name = 'DEAD';
   private timer = 0;
   private canAct = false;
   private actionQueued: 'retry' | 'shop' | null = null;
 
-  // Animation state: 5 stats staggered 0.3s apart
-  private statTimers: number[] = [0, 0, 0, 0, 0];
+  // Animation state: 7 stats staggered 0.3s apart
+  private statTimers: number[] = [0, 0, 0, 0, 0, 0, 0];
   private readonly STAT_STAGGER = 0.3;
   private readonly STAT_ANIM_DURATION = 0.6;
 
@@ -29,7 +38,7 @@ export class DeadState implements GameState {
     this.timer = 0;
     this.canAct = false;
     this.actionQueued = null;
-    this.statTimers = [0, 0, 0, 0, 0];
+    this.statTimers = [0, 0, 0, 0, 0, 0, 0];
 
     // Show install prompt after 3+ runs
     const prompt = this.game.installPrompt;
@@ -60,10 +69,10 @@ export class DeadState implements GameState {
         return;
       }
 
-      // Retry button zone (centered, around y=490)
-      if (y >= 460 && y <= 520) {
+      // Retry button zone (centered, around y=530)
+      if (y >= 500 && y <= 560) {
         this.actionQueued = 'retry';
-      } else if (y > 530) {
+      } else if (y > 570) {
         this.actionQueued = 'shop';
       }
     };
@@ -103,7 +112,7 @@ export class DeadState implements GameState {
 
   fixedUpdate(dt: number): void {
     this.timer += dt;
-    if (this.timer > 1.2) this.canAct = true;
+    if (this.timer > 1.5) this.canAct = true;
 
     // Update staggered stat timers
     for (let i = 0; i < this.statTimers.length; i++) {
@@ -138,66 +147,98 @@ export class DeadState implements GameState {
     ctx.textAlign = 'center';
     ctx.shadowColor = headerColor;
     ctx.shadowBlur = 15;
-    ctx.fillText(headerText, CANVAS_W / 2, 80);
+    ctx.fillText(headerText, CANVAS_W / 2, 60);
     ctx.shadowBlur = 0;
+
+    // Death cause (slot 0)
+    const deathCause = this.game.lastRunDeathCause;
+    const causeLabel = DEATH_CAUSE_LABELS[deathCause] ?? 'DESCENT ENDED';
+    if (this.statTimers[0]! > 0) {
+      const t = this.statTimers[0]!;
+      const ease = easeOutBack(t);
+      const offsetY = (1 - ease) * 15;
+      ctx.globalAlpha = t * 0.8;
+      ctx.fillStyle = '#ff6677';
+      ctx.font = 'bold 12px monospace';
+      ctx.fillText(causeLabel, CANVAS_W / 2, 88 + offsetY);
+      ctx.globalAlpha = 1;
+    }
 
     // Stats area — staggered slide-up + fade-in with count-up
     const score = this.game.lastRunScore;
     const depth = Math.floor(this.game.lastRunDepth / 10);
     const maxCombo = this.game.lastRunMaxCombo;
+    const kills = this.game.lastRunKills;
     const shards = this.game.lastRunShardsEarned;
     const isBestScore = this.game.lastRunWasBestScore;
     const isBestDepth = this.game.lastRunWasBestDepth;
 
-    const baseY = 140;
-    const statGap = 58;
+    const baseY = 120;
+    const statGap = 48;
 
-    // Stat 0: SCORE
-    this.renderStat(ctx, 0, baseY, 'SCORE',
-      Math.floor(lerp(0, score, this.statTimers[0]!)).toLocaleString(),
+    // Stat 1: SCORE
+    this.renderStat(ctx, 1, baseY, 'SCORE',
+      Math.floor(lerp(0, score, this.statTimers[1]!)).toLocaleString(),
       isBestScore, '#ffffff');
 
-    // Stat 1: DEPTH
-    this.renderStat(ctx, 1, baseY + statGap, 'DEPTH',
-      `${Math.floor(lerp(0, depth, this.statTimers[1]!))}m`,
+    // Stat 2: DEPTH
+    this.renderStat(ctx, 2, baseY + statGap, 'DEPTH',
+      `${Math.floor(lerp(0, depth, this.statTimers[2]!))}m`,
       isBestDepth, '#aaaacc');
 
-    // Stat 2: MAX COMBO
-    this.renderStat(ctx, 2, baseY + statGap * 2, 'MAX COMBO',
-      `x${Math.floor(lerp(0, maxCombo, this.statTimers[2]!))}`,
+    // Stat 3: MAX COMBO
+    this.renderStat(ctx, 3, baseY + statGap * 2, 'MAX COMBO',
+      `x${Math.floor(lerp(0, maxCombo, this.statTimers[3]!))}`,
       false, '#44ffff');
 
-    // Stat 3: SHARDS
-    this.renderStat(ctx, 3, baseY + statGap * 3, 'SHARDS EARNED',
-      `+${Math.floor(lerp(0, shards, this.statTimers[3]!))}`,
+    // Stat 4: KILLS
+    this.renderStat(ctx, 4, baseY + statGap * 3, 'ENEMIES DEFEATED',
+      `${Math.floor(lerp(0, kills, this.statTimers[4]!))}`,
+      false, '#ff8844');
+
+    // Stat 5: SHARDS
+    this.renderStat(ctx, 5, baseY + statGap * 4, 'SHARDS EARNED',
+      `+${Math.floor(lerp(0, shards, this.statTimers[5]!))}`,
       false, '#44ff88');
 
-    // Stat 4: TOTAL SHARDS
-    if (this.statTimers[4]! > 0) {
-      const t = this.statTimers[4]!;
+    // Stat 6: TOTAL SHARDS + breakdown
+    if (this.statTimers[6]! > 0) {
+      const t = this.statTimers[6]!;
       const ease = easeOutBack(t);
       const offsetY = (1 - ease) * 20;
       ctx.globalAlpha = t;
       ctx.fillStyle = '#556677';
       ctx.font = '10px monospace';
-      ctx.fillText(`TOTAL: ${this.game.meta.shards}`, CANVAS_W / 2, baseY + statGap * 4 + offsetY);
+      ctx.fillText(`TOTAL: ${this.game.meta.shards}`, CANVAS_W / 2, baseY + statGap * 5 + offsetY);
+
+      // Score breakdown mini-line
+      const noDmg = this.game.lastRunNoDamageChunks;
+      const elites = this.game.lastRunEliteKills;
+      if (noDmg > 0 || elites > 0) {
+        ctx.fillStyle = '#445566';
+        ctx.font = '9px monospace';
+        const parts: string[] = [];
+        if (noDmg > 0) parts.push(`${noDmg} FLAWLESS`);
+        if (elites > 0) parts.push(`${elites} ELITES`);
+        ctx.fillText(parts.join('  |  '), CANVAS_W / 2, baseY + statGap * 5 + 14 + offsetY);
+      }
       ctx.globalAlpha = 1;
     }
 
     // Daily best score
-    if (isDaily && this.statTimers[4]! > 0.5) {
+    if (isDaily && this.statTimers[6]! > 0.5) {
       ctx.fillStyle = '#ffaa22';
       ctx.font = '10px monospace';
       ctx.fillText(`DAILY BEST: ${Math.floor(this.game.meta.dailyBestScore).toLocaleString()}`,
-        CANVAS_W / 2, baseY + statGap * 4 + 18);
+        CANVAS_W / 2, baseY + statGap * 5 + 30);
     }
 
     // Action buttons
     if (this.canAct) {
-      const buttonFadeT = Math.min(1, (this.timer - 1.2) / 0.3);
+      const buttonFadeT = Math.min(1, (this.timer - 1.5) / 0.3);
 
       // Retry button with filled background
-      const retryY = 490;
+      const retryY = 530;
       const retryW = 180;
       const retryH = 36;
       const retryScale = easeOutBack(Math.min(1, buttonFadeT * 2));
@@ -228,12 +269,12 @@ export class DeadState implements GameState {
         ctx.fillStyle = '#44ff88';
         ctx.font = 'bold 13px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('UPGRADES', CANVAS_W / 2, 545);
+        ctx.fillText('UPGRADES', CANVAS_W / 2, 585);
 
         // Hint
         ctx.fillStyle = '#445566';
         ctx.font = '9px monospace';
-        ctx.fillText('TAP BELOW FOR UPGRADES  |  U KEY', CANVAS_W / 2, 568);
+        ctx.fillText('TAP BELOW FOR UPGRADES  |  U KEY', CANVAS_W / 2, 605);
         ctx.globalAlpha = 1;
       }
     }
@@ -261,14 +302,14 @@ export class DeadState implements GameState {
 
     // Label
     ctx.fillStyle = '#667788';
-    ctx.font = '11px monospace';
+    ctx.font = '10px monospace';
     ctx.textAlign = 'center';
     ctx.fillText(label, CANVAS_W / 2, y + offsetY);
 
     // Value
     ctx.fillStyle = valueColor;
-    ctx.font = 'bold 20px monospace';
-    ctx.fillText(value, CANVAS_W / 2, y + 22 + offsetY);
+    ctx.font = 'bold 18px monospace';
+    ctx.fillText(value, CANVAS_W / 2, y + 20 + offsetY);
 
     // NEW BEST badge
     if (isBest && t > 0.5) {
@@ -278,7 +319,7 @@ export class DeadState implements GameState {
       ctx.font = 'bold 10px monospace';
       ctx.shadowColor = '#ffaa22';
       ctx.shadowBlur = 8;
-      ctx.fillText('NEW BEST!', CANVAS_W / 2 + 80, y + 18 + offsetY);
+      ctx.fillText('NEW BEST!', CANVAS_W / 2 + 80, y + 16 + offsetY);
       ctx.shadowBlur = 0;
     }
 

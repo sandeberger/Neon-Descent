@@ -6,6 +6,10 @@ export class ScoreSystem {
   score = 0;
   depth = 0;
   currency = 0;
+  kills = 0;
+  eliteKills = 0;
+  noDamageChunks = 0;
+  private chunkDamageTaken = false;
 
   constructor(
     private events: EventBus,
@@ -16,6 +20,9 @@ export class ScoreSystem {
     events.on('enemy:killed', (e) => {
       const delta = e.scoreValue * this.combo.multiplier;
       this.score += delta;
+      this.kills++;
+      // Track elite/boss kills (scoreValue >= 50 indicates elite/boss tier)
+      if (e.scoreValue >= 50) this.eliteKills++;
       this.events.emit('score:update', { score: this.score, delta });
     });
 
@@ -25,6 +32,18 @@ export class ScoreSystem {
         const currencyBonus = this.upgrades.getEffect('currency_bonus');
         this.currency += Math.max(1, Math.floor(d.value * (1 + currencyBonus)));
       }
+    });
+
+    // Track damage per chunk for no-damage tracking
+    events.on('player:damage', () => {
+      this.chunkDamageTaken = true;
+    });
+
+    events.on('chunk:entered', () => {
+      if (!this.chunkDamageTaken) {
+        this.noDamageChunks++;
+      }
+      this.chunkDamageTaken = false;
     });
   }
 
@@ -41,5 +60,9 @@ export class ScoreSystem {
     this.score = 0;
     this.depth = 0;
     this.currency = 0;
+    this.kills = 0;
+    this.eliteKills = 0;
+    this.noDamageChunks = 0;
+    this.chunkDamageTaken = false;
   }
 }

@@ -4,8 +4,11 @@ export class ScreenShake {
   private intensity = 0;
   private decay = 0.88;
 
+  /** Multiplier for intensity (set by accessibility settings, default 1.0) */
+  intensityMultiplier = 1.0;
+
   trigger(intensity: number): void {
-    this.intensity = Math.max(this.intensity, intensity);
+    this.intensity = Math.max(this.intensity, intensity * this.intensityMultiplier);
   }
 
   update(): void {

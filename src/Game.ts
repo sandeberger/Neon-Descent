@@ -17,6 +17,10 @@ import { InstallPrompt } from '@ui/InstallPrompt';
 import { AnalyticsManager } from '@analytics/AnalyticsManager';
 import { AchievementSystem } from '@systems/AchievementSystem';
 import { LeaderboardSystem } from '@systems/LeaderboardSystem';
+import { AccessibilitySettings } from '@systems/AccessibilitySettings';
+import { CosmeticsSystem } from '@systems/CosmeticsSystem';
+import { CodexSystem } from '@systems/CodexSystem';
+import { RunModifierSystem } from '@systems/RunModifierSystem';
 
 export class Game {
   readonly canvas: HTMLCanvasElement;
@@ -31,6 +35,10 @@ export class Game {
   readonly analytics: AnalyticsManager;
   readonly achievements: AchievementSystem;
   readonly leaderboard: LeaderboardSystem;
+  readonly accessibility: AccessibilitySettings;
+  readonly cosmetics: CosmeticsSystem;
+  readonly codex: CodexSystem;
+  readonly runModifiers: RunModifierSystem;
 
   canvasScale = 1;
 
@@ -43,6 +51,10 @@ export class Game {
   lastRunShardsEarned = 0;
   lastRunWasBestScore = false;
   lastRunWasBestDepth = false;
+  lastRunDeathCause = '';
+  lastRunKills = 0;
+  lastRunEliteKills = 0;
+  lastRunNoDamageChunks = 0;
 
   // Daily run flags
   pendingDailyRun = false;
@@ -68,6 +80,10 @@ export class Game {
     this.analytics = new AnalyticsManager();
     this.achievements = new AchievementSystem();
     this.leaderboard = new LeaderboardSystem();
+    this.accessibility = new AccessibilitySettings();
+    this.cosmetics = new CosmeticsSystem();
+    this.codex = new CodexSystem();
+    this.runModifiers = new RunModifierSystem();
     this.loop = new GameLoop(
       (dt) => this.states.fixedUpdate(dt),
       (alpha) => this.states.render(alpha),
@@ -149,6 +165,8 @@ export class Game {
     await this.meta.init(this.save.db!);
     this.analytics.init(this.save.db!);
     await this.leaderboard.init(this.save.db!);
+    await this.cosmetics.init(this.save.db!);
+    await this.codex.init(this.save.db!);
     this.pendingRunState = await this.save.loadRun();
     this.states.transition('BOOT');
     this.loop.start();

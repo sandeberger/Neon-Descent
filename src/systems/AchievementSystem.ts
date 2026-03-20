@@ -183,8 +183,52 @@ function defineAchievements(): Achievement[] {
     {
       id: 'tourist',
       name: 'Tourist',
-      description: 'Visit all 5 biomes',
-      condition: (s) => s.biomesVisited.size >= 5,
+      description: 'Visit all 6 biomes',
+      condition: (s) => s.biomesVisited.size >= 6,
+      unlocked: false,
+    },
+
+    // Biome mastery medals
+    {
+      id: 'mastery_surface',
+      name: 'Surface Master',
+      description: 'Reach Neon Gut without taking damage in Surface Fracture',
+      condition: (s) => s.biomesVisited.has('neon_gut') && s.noDamageChunks >= 3,
+      unlocked: false,
+    },
+    {
+      id: 'mastery_neon_gut',
+      name: 'Gut Runner',
+      description: 'Clear Neon Gut and reach Data Crypt',
+      condition: (s) => s.biomesVisited.has('data_crypt') && s.currentDepth >= 4000,
+      unlocked: false,
+    },
+    {
+      id: 'mastery_data_crypt',
+      name: 'Crypt Breaker',
+      description: 'Defeat the Bloom Heart boss',
+      condition: (s) => s.bossesDefeated >= 1 && s.biomesVisited.has('data_crypt'),
+      unlocked: false,
+    },
+    {
+      id: 'mastery_hollow_market',
+      name: 'Market Regular',
+      description: 'Visit the Hollow Market 3 times',
+      condition: (s) => s.biomesVisited.has('hollow_market') && s.totalRuns >= 3,
+      unlocked: false,
+    },
+    {
+      id: 'mastery_molten_grid',
+      name: 'Heatproof',
+      description: 'Survive the Molten Grid and reach Void Core',
+      condition: (s) => s.biomesVisited.has('void_core'),
+      unlocked: false,
+    },
+    {
+      id: 'mastery_void_core',
+      name: 'Void Conqueror',
+      description: 'Reach depth 1000m in the Void Core',
+      condition: (s) => s.currentDepth >= 105000,
       unlocked: false,
     },
     {

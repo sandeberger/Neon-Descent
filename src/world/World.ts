@@ -94,6 +94,9 @@ export class World {
   private readonly NEAR_MISS_RADIUS = 15;
   private readonly NEAR_MISS_COOLDOWN = 0.15;
 
+  // Chunk crossing tracking
+  private lastChunkIndex = -1;
+
   // Threat density for camera
   threatDensity = 0;
 
@@ -305,6 +308,13 @@ export class World {
 
     // Depth tracking (delegated to ScoreSystem)
     this.scoring.addDepth(this.player.y);
+
+    // Emit chunk:entered when player crosses chunk boundaries
+    const currentChunkIdx = Math.floor(this.player.y / CHUNK_HEIGHT);
+    if (currentChunkIdx !== this.lastChunkIndex) {
+      this.lastChunkIndex = currentChunkIdx;
+      this.events.emit('chunk:entered', { chunkIndex: currentChunkIdx });
+    }
 
     // Spawn enemies from new chunks
     this.spawnFromChunks();
