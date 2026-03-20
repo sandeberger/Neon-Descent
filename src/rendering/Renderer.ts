@@ -464,12 +464,15 @@ export class Renderer {
       ctx.globalAlpha = 0.4;
     }
 
-    // Glow halo (procedural, below sprite)
-    ctx.fillStyle = ENTITY_PALETTE.playerGlow;
+    // Soft circular glow behind sprite
     const prevAlpha = ctx.globalAlpha;
-    ctx.globalAlpha = prevAlpha * 0.2;
-    ctx.fillRect(rx - fw / 2 - 4, ry - fh / 2 - 4, fw + 8, fh + 8);
+    const glowR = Math.max(fw, fh) * 0.6;
+    const grad = ctx.createRadialGradient(rx, ry, 0, rx, ry, glowR);
+    grad.addColorStop(0, 'rgba(34, 170, 255, 0.12)');
+    grad.addColorStop(1, 'rgba(34, 170, 255, 0)');
     ctx.globalAlpha = prevAlpha;
+    ctx.fillStyle = grad;
+    ctx.fillRect(rx - glowR, ry - glowR, glowR * 2, glowR * 2);
 
     // Draw sprite frame
     sprites.drawFrame(ctx, path, frameIdx, fw, fh, rx - fw / 2, ry - fh / 2);
