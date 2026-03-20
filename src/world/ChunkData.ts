@@ -926,14 +926,14 @@ export const BUILT_IN_CHUNKS: ChunkTemplate[] = [
       '#..........#',
       '#..........#',
       '#..........#',
-      '############',
+      '#????..????#',
     ]),
     spawns: [
       { col: 5, row: 3, type: 'enemy', id: 'sentinel_miniboss' },
       { col: 2, row: 16, type: 'pickup', id: 'heal' },
       { col: 9, row: 16, type: 'pickup', id: 'heal' },
     ],
-    tags: ['miniboss', 'arena', 'locked'],
+    tags: ['miniboss', 'arena'],
   },
 
   // ---- ELITE ----
@@ -1322,7 +1322,7 @@ export const BUILT_IN_CHUNKS: ChunkTemplate[] = [
     intensity: 1.0,
     biomes: ['data_crypt', 'molten_grid', 'void_core'],
     grid: makeGrid([
-      '############',
+      '#..........#',
       '#..........#',
       '#..........#',
       '#..........#',
@@ -1342,7 +1342,7 @@ export const BUILT_IN_CHUNKS: ChunkTemplate[] = [
       '#..........#',
       '#..........#',
       '#..........#',
-      '############',
+      '#????..????#',
     ]),
     spawns: [
       { col: 5, row: 3, type: 'enemy', id: 'bloom_heart' },
@@ -1350,7 +1350,7 @@ export const BUILT_IN_CHUNKS: ChunkTemplate[] = [
       { col: 9, row: 17, type: 'pickup', id: 'heal' },
       { col: 5, row: 17, type: 'pickup', id: 'heal' },
     ],
-    tags: ['boss', 'arena', 'locked'],
+    tags: ['boss', 'arena'],
   },
 
   // ---- BOSS ARENA: DRILL MOTHER ----
@@ -1361,12 +1361,6 @@ export const BUILT_IN_CHUNKS: ChunkTemplate[] = [
     intensity: 1.0,
     biomes: ['molten_grid', 'void_core'],
     grid: makeGrid([
-      '############',
-      '#..........#',
-      '#..........#',
-      '#..........#',
-      '#..--..--.#',
-      '#..........#',
       '#..........#',
       '#..........#',
       '#..........#',
@@ -1376,12 +1370,18 @@ export const BUILT_IN_CHUNKS: ChunkTemplate[] = [
       '#..........#',
       '#..........#',
       '#..........#',
+      '#..........#',
       '#..--..--.#',
       '#..........#',
       '#..........#',
       '#..........#',
       '#..........#',
-      '############',
+      '#..--..--.#',
+      '#..........#',
+      '#..........#',
+      '#..........#',
+      '#..........#',
+      '#????..????#',
     ]),
     spawns: [
       { col: 5, row: 3, type: 'enemy', id: 'drill_mother' },
@@ -1597,7 +1597,7 @@ export const BUILT_IN_CHUNKS: ChunkTemplate[] = [
     difficulty: 0.4,
     intensity: 0.3,
     grid: makeGrid([
-      '############',
+      '#....??....#',
       '#..........#',
       '#..------..#',
       '#..........#',
@@ -1639,7 +1639,7 @@ export const BUILT_IN_CHUNKS: ChunkTemplate[] = [
     intensity: 0.8,
     biomes: ['neon_gut', 'data_crypt', 'molten_grid', 'void_core'],
     grid: makeGrid([
-      '############',
+      '#....??....#',
       '#..........#',
       '#..........#',
       '#..--..--..#',

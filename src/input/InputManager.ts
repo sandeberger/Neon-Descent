@@ -31,6 +31,8 @@ export class InputManager {
 
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
+    window.addEventListener('blur', this.onBlur);
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
   }
 
   unbind(canvas: HTMLCanvasElement): void {
@@ -39,6 +41,8 @@ export class InputManager {
     this.canvas = null;
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
+    window.removeEventListener('blur', this.onBlur);
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
   }
 
   updateScale(scale: number): void {
@@ -119,12 +123,29 @@ export class InputManager {
   // Prevent keyboard repeat from flooding the buffer
   private consumedThisFrame = new Set<string>();
 
+  /** Clear all input state — call on state transitions or focus loss */
+  reset(): void {
+    this.keys.clear();
+    this.consumedThisFrame.clear();
+    this.buffer.prune();
+  }
+
   private onKeyDown = (e: KeyboardEvent): void => {
     this.keys.add(e.code);
   };
 
   private onKeyUp = (e: KeyboardEvent): void => {
     this.keys.delete(e.code);
+  };
+
+  private onBlur = (): void => {
+    this.keys.clear();
+  };
+
+  private onVisibilityChange = (): void => {
+    if (document.hidden) {
+      this.keys.clear();
+    }
   };
 
   get isTouch(): boolean {

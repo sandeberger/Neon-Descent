@@ -26,6 +26,9 @@ export class PlayingState implements GameState {
   constructor(private game: Game) {}
 
   onEnter(prev: string | null): void {
+    // Clear any stuck input state from previous screen
+    this.game.input.reset();
+
     // If resuming from pause or shop, skip re-creating world
     if ((prev === 'PAUSED' || prev === 'RUN_SHOP') && this.resuming) {
       this.resuming = false;
